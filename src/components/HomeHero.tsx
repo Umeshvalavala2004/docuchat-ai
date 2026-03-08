@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Send,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { uploadDocument } from "@/lib/api";
 import { toast } from "sonner";
 
