@@ -6,8 +6,11 @@ import {
   Users, FileText, MessageSquare, Crown, Ban,
   ArrowUpCircle, ArrowDownCircle, BarChart3, Eye,
   TrendingUp, Activity, Search as SearchIcon, Tag,
+  Palette, Save, Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
