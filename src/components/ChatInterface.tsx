@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
-import { streamChat, type ChatMessage, type Source, saveMessage, createChatSession } from "@/lib/api";
+import { streamChat, type ChatMessage, type Source, saveMessage, createChatSession, getSuggestedQuestions } from "@/lib/api";
+import { toast } from "sonner";
 
 interface ChatInterfaceProps {
   documentId: string;
+  documentIds?: string[];
   documentName: string;
   userId: string;
   chatSessionId?: string;
@@ -15,8 +17,37 @@ interface ChatInterfaceProps {
   onChatSessionCreated?: (id: string) => void;
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      title="Copy message"
+    >
+      {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
+function MessageTimestamp({ time }: { time?: string }) {
+  if (!time) return null;
+  return (
+    <span className="text-[10px] text-muted-foreground/50 tabular-nums">
+      {new Date(time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+    </span>
+  );
+}
+
 export default function ChatInterface({
   documentId,
+  documentIds,
   documentName,
   userId,
   chatSessionId,
@@ -28,6 +59,8 @@ export default function ChatInterface({
   const [isLoading, setIsLoading] = useState(false);
   const [activeSources, setActiveSources] = useState<Source[]>([]);
   const [sessionId, setSessionId] = useState(chatSessionId);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,14 +68,27 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
-    if (!input.trim() || isLoading) return;
+  // Load suggested questions for new chats
+  useEffect(() => {
+    if (messages.length === 0 && documentId) {
+      setLoadingQuestions(true);
+      getSuggestedQuestions(documentId)
+        .then((q) => setSuggestedQuestions(q.length > 0 ? q : [
+          "What is this document about?",
+          "Summarize the key points",
+          "What are the main findings?",
+        ]))
+        .finally(() => setLoadingQuestions(false));
+    }
+  }, [documentId, messages.length]);
 
-    const userMessage = input.trim();
+  const sendMessage = async (userMessage: string) => {
+    if (!userMessage.trim() || isLoading) return;
+
     setInput("");
     setIsLoading(true);
 
-    const userMsg: ChatMessage = { role: "user", content: userMessage };
+    const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMsg]);
 
     let currentSessionId = sessionId;
@@ -67,6 +113,7 @@ export default function ChatInterface({
     await streamChat({
       message: userMessage,
       documentId,
+      documentIds,
       chatSessionId: currentSessionId,
       history: messages,
       onSources: (s) => {
@@ -82,7 +129,7 @@ export default function ChatInterface({
               i === prev.length - 1 ? { ...m, content: assistantContent } : m
             );
           }
-          return [...prev, { role: "assistant", content: assistantContent, sources }];
+          return [...prev, { role: "assistant", content: assistantContent, sources, timestamp: new Date().toISOString() }];
         });
       },
       onDone: () => {
@@ -98,13 +145,32 @@ export default function ChatInterface({
       },
       onError: (error) => {
         setIsLoading(false);
+        toast.error(error);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `Error: ${error}` },
+          { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() },
         ]);
       },
     });
   };
+
+  const handleRegenerate = async (messageIndex: number) => {
+    // Find the last user message before this assistant message
+    let userMsg = "";
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        userMsg = messages[i].content;
+        break;
+      }
+    }
+    if (!userMsg) return;
+
+    // Remove messages from index onwards
+    setMessages((prev) => prev.slice(0, messageIndex));
+    await sendMessage(userMsg);
+  };
+
+  const send = () => sendMessage(input.trim());
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -127,32 +193,39 @@ export default function ChatInterface({
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
-              className="rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 p-5 mb-5 shadow-inner"
+              className="rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 p-6 mb-6 shadow-inner"
             >
-              <Sparkles className="h-10 w-10 text-primary" />
+              <Sparkles className="h-12 w-12 text-primary" />
             </motion.div>
-            <h3 className="text-xl font-bold text-foreground">
+            <h3 className="text-2xl font-bold text-foreground tracking-tight">
               Chat with {documentName}
             </h3>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">
               Ask any question about your document. I'll find the answer and cite the exact source.
             </p>
-            <div className="mt-6 grid gap-2 w-full max-w-md">
-              {["What is this document about?", "Summarize the key points", "What are the main findings?"].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => { setInput(q); textareaRef.current?.focus(); }}
-                  className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground hover:border-primary/30 transition-all text-left"
-                >
-                  <span className="text-primary/60 mr-2">→</span>
-                  {q}
-                </button>
-              ))}
+            <div className="mt-8 grid gap-2 w-full max-w-md">
+              {loadingQuestions ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-xs text-muted-foreground">Generating smart questions...</span>
+                </div>
+              ) : (
+                suggestedQuestions.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => sendMessage(q)}
+                    className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground hover:border-primary/30 transition-all text-left group"
+                  >
+                    <span className="text-primary/60 mr-2 group-hover:text-primary transition-colors">→</span>
+                    {q}
+                  </button>
+                ))
+              )}
             </div>
           </motion.div>
         )}
 
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-3xl space-y-5">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
               <motion.div
@@ -167,43 +240,65 @@ export default function ChatInterface({
                     <Bot className="h-4 w-4 text-primary-foreground" />
                   </div>
                 )}
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/80 border border-border/50"
-                  }`}
-                >
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert text-foreground">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  )}
-
-                  {/* Sources */}
-                  {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3 border-t border-border/30 pt-3">
-                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Sources
-                      </p>
-                      <div className="grid gap-1.5">
-                        {msg.sources.slice(0, 4).map((src, j) => (
-                          <button
-                            key={j}
-                            onClick={() => setActiveSources([src])}
-                            className="flex items-start gap-2 rounded-lg bg-background/80 border border-border/30 p-2 text-left text-xs hover:bg-background hover:border-primary/30 transition-all"
-                          >
-                            <FileText className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                            <span className="line-clamp-2 text-muted-foreground">
-                              {src.content}
-                            </span>
-                          </button>
-                        ))}
+                <div className="max-w-[85%] min-w-0">
+                  <div
+                    className={`rounded-2xl px-4 py-3 ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/80 border border-border/50"
+                    }`}
+                  >
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm max-w-none dark:prose-invert text-foreground">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    )}
+
+                    {/* Sources */}
+                    {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 border-t border-border/30 pt-3">
+                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Sources
+                        </p>
+                        <div className="grid gap-1.5">
+                          {msg.sources.slice(0, 4).map((src, j) => (
+                            <button
+                              key={j}
+                              onClick={() => setActiveSources([src])}
+                              className="flex items-start gap-2 rounded-lg bg-background/80 border border-border/30 p-2 text-left text-xs hover:bg-background hover:border-primary/30 transition-all"
+                            >
+                              <FileText className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                              <span className="line-clamp-2 text-muted-foreground">
+                                {src.content}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message actions row */}
+                  <div className="flex items-center gap-2 mt-1.5 px-1">
+                    <MessageTimestamp time={msg.timestamp} />
+                    {msg.role === "assistant" && (
+                      <>
+                        <CopyButton text={msg.content} />
+                        {!isLoading && (
+                          <button
+                            onClick={() => handleRegenerate(i)}
+                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                            title="Regenerate"
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                            Regenerate
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
                 {msg.role === "user" && (
                   <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-foreground/10 to-foreground/5">
@@ -227,6 +322,7 @@ export default function ChatInterface({
                 <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" />
                 <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft [animation-delay:0.2s]" />
                 <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft [animation-delay:0.4s]" />
+                <span className="ml-2 text-xs text-muted-foreground">Thinking...</span>
               </div>
             </motion.div>
           )}

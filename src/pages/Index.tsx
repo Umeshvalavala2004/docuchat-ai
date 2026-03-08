@@ -6,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
 import PdfViewer from "@/components/PdfViewer";
-import { FileText, Upload, Eye, EyeOff } from "lucide-react";
+import { FileText, Upload, Eye, EyeOff, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getChatMessages } from "@/lib/api";
 import type { Source, ChatMessage } from "@/lib/api";
@@ -18,7 +18,6 @@ const Index = () => {
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
-  const [selectedDocPath, setSelectedDocPath] = useState<string>("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [chatSessionId, setChatSessionId] = useState<string | undefined>();
@@ -58,8 +57,6 @@ const Index = () => {
     setChatSessionId(undefined);
     setInitialMessages(undefined);
     setShowPdfViewer(false);
-    // Find document path for PDF viewer
-    // We'll set it when documents are loaded
   };
 
   const handleSelectChatSession = async (sessionId: string, docId: string, docName: string) => {
@@ -69,13 +66,13 @@ const Index = () => {
     setView("chat");
     setShowPdfViewer(false);
 
-    // Load existing messages
     try {
       const msgs = await getChatMessages(sessionId);
       const formatted: ChatMessage[] = msgs.map((m: any) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
         sources: m.sources ? (typeof m.sources === "string" ? JSON.parse(m.sources) : m.sources) : undefined,
+        timestamp: m.created_at,
       }));
       setInitialMessages(formatted);
     } catch (e) {

@@ -13,9 +13,12 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
-    const { message, documentId, chatSessionId, history } = await req.json();
+    const { message, documentId, documentIds, chatSessionId, history } = await req.json();
     if (!message) throw new Error("message is required");
-    if (!documentId) throw new Error("documentId is required");
+
+    // Support multi-document: use documentIds array or fall back to single documentId
+    const docIds: string[] = documentIds || (documentId ? [documentId] : []);
+    if (docIds.length === 0) throw new Error("At least one documentId is required");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -24,58 +27,115 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Full-text keyword search on document chunks
-    const searchQuery = message.split(/\s+/).filter((w: string) => w.length > 2).join(' & ');
-    
-    let chunks: any[] = [];
+    // Extract keywords for search
+    const searchWords = message
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w: string) => w.length > 2)
+      .filter((w: string) => !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'has', 'was', 'one', 'our', 'out', 'with', 'this', 'that', 'from', 'have', 'what', 'how', 'who', 'when', 'where', 'which', 'does', 'will', 'about'].includes(w));
 
-    // Try full-text search first
-    if (searchQuery) {
-      const { data, error } = await supabase
-        .from("document_chunks")
-        .select("id, content, chunk_index, page_number")
-        .eq("document_id", documentId)
-        .textSearch("content", searchQuery, { type: "plain" })
-        .limit(8);
+    let allChunks: any[] = [];
 
-      if (!error && data && data.length > 0) {
-        chunks = data;
+    // Search across all selected documents
+    for (const dId of docIds) {
+      let chunks: any[] = [];
+
+      // Strategy 1: Full-text search
+      if (searchWords.length > 0) {
+        const searchQuery = searchWords.join(' & ');
+        const { data, error } = await supabase
+          .from("document_chunks")
+          .select("id, content, chunk_index, page_number, document_id")
+          .eq("document_id", dId)
+          .textSearch("content", searchQuery, { type: "plain" })
+          .limit(6);
+
+        if (!error && data && data.length > 0) {
+          chunks = data.map((c: any) => ({ ...c, search_method: "keyword" }));
+        }
       }
+
+      // Strategy 2: Individual word matching (broader search)
+      if (chunks.length < 4 && searchWords.length > 0) {
+        for (const word of searchWords.slice(0, 3)) {
+          const { data } = await supabase
+            .from("document_chunks")
+            .select("id, content, chunk_index, page_number, document_id")
+            .eq("document_id", dId)
+            .ilike("content", `%${word}%`)
+            .limit(3);
+
+          if (data) {
+            const existingIds = new Set(chunks.map((c: any) => c.id));
+            for (const c of data) {
+              if (!existingIds.has(c.id)) {
+                chunks.push({ ...c, search_method: "partial" });
+                existingIds.add(c.id);
+              }
+            }
+          }
+        }
+      }
+
+      // Strategy 3: Fallback to first chunks
+      if (chunks.length === 0) {
+        const { data } = await supabase
+          .from("document_chunks")
+          .select("id, content, chunk_index, page_number, document_id")
+          .eq("document_id", dId)
+          .order("chunk_index", { ascending: true })
+          .limit(6);
+
+        if (data) {
+          chunks = data.map((c: any) => ({ ...c, search_method: "fallback" }));
+        }
+      }
+
+      allChunks = allChunks.concat(chunks);
     }
 
-    // Fallback: if no keyword matches, get first chunks as context
-    if (chunks.length === 0) {
-      const { data, error } = await supabase
-        .from("document_chunks")
-        .select("id, content, chunk_index, page_number")
-        .eq("document_id", documentId)
-        .order("chunk_index", { ascending: true })
-        .limit(8);
-
-      if (!error && data) {
-        chunks = data;
-      }
-    }
-
-    if (chunks.length === 0) {
+    if (allChunks.length === 0) {
       throw new Error("No document content found. The document may still be processing.");
     }
 
-    const context = chunks
-      .map((c: any, i: number) => `[Source ${i + 1}] (chunk ${c.chunk_index})\n${c.content}`)
+    // Limit to top 10 chunks across all docs
+    allChunks = allChunks.slice(0, 10);
+
+    // Get document names for multi-doc context
+    let docNames: Record<string, string> = {};
+    if (docIds.length > 1) {
+      const { data: docs } = await supabase
+        .from("documents")
+        .select("id, name")
+        .in("id", docIds);
+      if (docs) {
+        for (const d of docs) docNames[d.id] = d.name;
+      }
+    }
+
+    const context = allChunks
+      .map((c: any, i: number) => {
+        const docLabel = docNames[c.document_id] ? ` from "${docNames[c.document_id]}"` : "";
+        return `[Source ${i + 1}]${docLabel} (chunk ${c.chunk_index})\n${c.content}`;
+      })
       .join("\n\n---\n\n");
 
-    const sources = chunks.map((c: any) => ({
+    const sources = allChunks.map((c: any, i: number) => ({
       id: c.id,
-      content: c.content.slice(0, 200),
+      content: c.content.slice(0, 300),
       chunk_index: c.chunk_index,
       page_number: c.page_number,
+      document_id: c.document_id,
+      score: c.search_method === "keyword" ? 0.95 : c.search_method === "partial" ? 0.75 : 0.5,
     }));
 
     // Build messages with history
+    const multiDocNote = docIds.length > 1 ? "You are chatting across multiple documents. Indicate which document each answer comes from." : "";
     const systemPrompt = `You are a document Q&A assistant. Answer questions STRICTLY based on the provided document context. 
+${multiDocNote}
 If the answer is not found in the context, say "I couldn't find this information in the document."
-Always cite which source numbers you used. Be precise and helpful.
+Always cite which source numbers you used. Be precise, helpful, and well-structured.
+Use markdown formatting for readability.
 
 DOCUMENT CONTEXT:
 ${context}`;
