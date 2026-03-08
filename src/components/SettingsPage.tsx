@@ -320,7 +320,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                 </div>
 
                 <div className="text-center py-4">
-                  <p className="text-xs text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+                  <p className="text-xs text-muted-foreground">{copyright}</p>
                 </div>
               </motion.div>
             )}
