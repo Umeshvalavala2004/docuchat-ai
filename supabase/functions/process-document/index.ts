@@ -6,46 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple text extraction from PDF binary
-function extractTextFromPDF(bytes: Uint8Array): string {
-  const text = new TextDecoder("latin1").decode(bytes);
-  const textBlocks: string[] = [];
-
-  // Extract text between BT and ET markers (PDF text objects)
-  const btEtRegex = /BT\s([\s\S]*?)ET/g;
-  let match;
-  while ((match = btEtRegex.exec(text)) !== null) {
-    const block = match[1];
-    const tjRegex = /\(([^)]*)\)\s*Tj/g;
-    let tjMatch;
-    while ((tjMatch = tjRegex.exec(block)) !== null) {
-      textBlocks.push(tjMatch[1]);
-    }
-    const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
-    let tjArrMatch;
-    while ((tjArrMatch = tjArrayRegex.exec(block)) !== null) {
-      const inner = tjArrMatch[1];
-      const strRegex = /\(([^)]*)\)/g;
-      let strMatch;
-      while ((strMatch = strRegex.exec(inner)) !== null) {
-        textBlocks.push(strMatch[1]);
-      }
-    }
-  }
-
-  // Fallback: extract any readable text sequences
-  if (textBlocks.length < 5) {
-    const readableRegex = /[\x20-\x7E]{20,}/g;
-    let readableMatch;
-    while ((readableMatch = readableRegex.exec(text)) !== null) {
-      const cleaned = readableMatch[0].replace(/[^\w\s.,;:!?'"()\-\/]/g, ' ').trim();
-      if (cleaned.length > 15) {
-        textBlocks.push(cleaned);
-      }
-    }
-  }
-
-  return textBlocks.join(' ').replace(/\s+/g, ' ').trim();
+async function extractTextFromPDFWithUnpdf(bytes: Uint8Array): Promise<string> {
+  const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
+  const doc = await getDocumentProxy(new Uint8Array(bytes));
+  const { text } = await extractText(doc, { mergePages: true });
+  return text;
 }
 
 function chunkText(text: string, chunkSize = 500, overlap = 100): { content: string; index: number }[] {
@@ -108,21 +73,23 @@ serve(async (req) => {
       fullText = await fileData.text();
     } else if (fileType === "pdf" || fileType === "application/pdf") {
       const bytes = new Uint8Array(await fileData.arrayBuffer());
-      fullText = extractTextFromPDF(bytes);
+      fullText = await extractTextFromPDFWithUnpdf(bytes);
     } else {
       fullText = await fileData.text();
     }
 
-    if (!fullText || fullText.length < 10) {
+    if (!fullText || fullText.trim().length < 10) {
       await supabase.from("documents").update({ status: "error" }).eq("id", documentId);
       throw new Error("Could not extract text from document. The PDF may be scanned/image-based.");
     }
 
-    // Chunk the text (500 words with 100 word overlap)
+    console.log(`Extracted ${fullText.length} characters from document`);
+
+    // Chunk the text
     const chunks = chunkText(fullText, 500, 100);
     console.log(`Created ${chunks.length} chunks from document`);
 
-    // Insert chunks without embeddings (using full-text search instead)
+    // Insert chunks
     const chunkRecords = chunks.map((chunk) => ({
       document_id: documentId,
       content: chunk.content,
