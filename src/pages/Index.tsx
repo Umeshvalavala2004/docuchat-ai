@@ -112,6 +112,16 @@ const Index = () => {
     }
   };
 
+  const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
+    const prompts: Record<TextAction, string> = {
+      explain: `Explain the following text from the document (page ${pageNumber}) in simple terms:\n\n"${text}"`,
+      summarize: `Summarize the following text from the document (page ${pageNumber}):\n\n"${text}"`,
+      rewrite: `Rewrite the following text from the document (page ${pageNumber}) in clearer language:\n\n"${text}"`,
+      ask: text,
+    };
+    setInjectedPrompt(prompts[action]);
+  }, []);
+
   const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
   const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
 
