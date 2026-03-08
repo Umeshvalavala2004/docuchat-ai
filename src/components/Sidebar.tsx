@@ -115,6 +115,10 @@ export default function Sidebar({
   const [toolsOpen, setToolsOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
   const [quickQOpen, setQuickQOpen] = useState(false);
+  const [sharedOpen, setSharedOpen] = useState(false);
+  const [shareDocId, setShareDocId] = useState<string | null>(null);
+  const { sharedDocs, sharedChats, reload: reloadShared } = useSharedWithMe(user.id);
+  const docShares = useDocumentShares(shareDocId);
 
   const loadDocuments = async () => {
     try {
