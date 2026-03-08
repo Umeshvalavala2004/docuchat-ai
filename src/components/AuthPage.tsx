@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +14,28 @@ interface AuthPageProps {
 
 export default function AuthPage({ onAuth }: AuthPageProps) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgot, setIsForgot] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      setError(error.message);
+    } else {
+      setForgotSent(true);
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,10 +132,10 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-foreground">
-              {isSignUp ? "Create your account" : "Welcome back"}
+              {isForgot ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {isSignUp ? "Start chatting with your documents" : "Sign in to continue"}
+              {isForgot ? "We'll send you a reset link" : isSignUp ? "Start chatting with your documents" : "Sign in to continue"}
             </p>
           </div>
 
@@ -153,57 +171,115 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="h-11 rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  className="h-11 rounded-xl"
-                />
-              </div>
+            {isForgot ? (
+              forgotSent ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-4">
+                  <p className="font-medium text-foreground">Check your email</p>
+                  <p className="text-sm text-muted-foreground mt-1">We sent a password reset link to {email}</p>
+                  <button
+                    onClick={() => { setIsForgot(false); setForgotSent(false); setError(""); }}
+                    className="mt-4 text-sm text-primary hover:underline"
+                  >
+                    Back to sign in
+                  </button>
+                </motion.div>
+              ) : (
+                <>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                    {error && (
+                      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2"
+                      >{error}</motion.p>
+                    )}
+                    <Button type="submit" className="h-11 w-full rounded-xl shadow-sm" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Send reset link
+                    </Button>
+                  </form>
+                  <div className="mt-5 text-center">
+                    <button
+                      onClick={() => { setIsForgot(false); setError(""); }}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Back to sign in
+                    </button>
+                  </div>
+                </>
+              )
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => { setIsForgot(true); setError(""); }}
+                          className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
 
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2"
-                >
-                  {error}
-                </motion.p>
-              )}
+                  {error && (
+                    <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                      className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2"
+                    >{error}</motion.p>
+                  )}
 
-              <Button type="submit" className="h-11 w-full rounded-xl shadow-sm" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSignUp ? "Create account" : "Sign in"}
-              </Button>
-            </form>
+                  <Button type="submit" className="h-11 w-full rounded-xl shadow-sm" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSignUp ? "Create account" : "Sign in"}
+                  </Button>
+                </form>
 
-            <div className="mt-5 text-center">
-              <button
-                onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-              </button>
-            </div>
+                <div className="mt-5 text-center">
+                  <button
+                    onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
       </div>
