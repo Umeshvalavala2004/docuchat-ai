@@ -10,19 +10,17 @@ const corsHeaders = {
 function extractTextFromPDF(bytes: Uint8Array): string {
   const text = new TextDecoder("latin1").decode(bytes);
   const textBlocks: string[] = [];
-  
+
   // Extract text between BT and ET markers (PDF text objects)
   const btEtRegex = /BT\s([\s\S]*?)ET/g;
   let match;
   while ((match = btEtRegex.exec(text)) !== null) {
     const block = match[1];
-    // Extract text from Tj, TJ, ' and " operators
     const tjRegex = /\(([^)]*)\)\s*Tj/g;
     let tjMatch;
     while ((tjMatch = tjRegex.exec(block)) !== null) {
       textBlocks.push(tjMatch[1]);
     }
-    // TJ array
     const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
     let tjArrMatch;
     while ((tjArrMatch = tjArrayRegex.exec(block)) !== null) {
@@ -34,10 +32,9 @@ function extractTextFromPDF(bytes: Uint8Array): string {
       }
     }
   }
-  
-  // Also try stream-based extraction for compressed PDFs
+
+  // Fallback: extract any readable text sequences
   if (textBlocks.length < 5) {
-    // Fallback: extract any readable text sequences
     const readableRegex = /[\x20-\x7E]{20,}/g;
     let readableMatch;
     while ((readableMatch = readableRegex.exec(text)) !== null) {
@@ -67,29 +64,6 @@ function chunkText(text: string, chunkSize = 500, overlap = 100): { content: str
   }
 
   return chunks;
-}
-
-async function generateEmbedding(text: string, apiKey: string): Promise<number[]> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input: text.slice(0, 8000),
-      model: "text-embedding-3-small",
-      dimensions: 768,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Embedding API error ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
 }
 
 serve(async (req) => {
@@ -136,7 +110,6 @@ serve(async (req) => {
       const bytes = new Uint8Array(await fileData.arrayBuffer());
       fullText = extractTextFromPDF(bytes);
     } else {
-      // For docx and others, try as text
       fullText = await fileData.text();
     }
 
@@ -149,28 +122,14 @@ serve(async (req) => {
     const chunks = chunkText(fullText, 500, 100);
     console.log(`Created ${chunks.length} chunks from document`);
 
-    // Generate embeddings and insert chunks
-    const chunkRecords = [];
-    for (const chunk of chunks) {
-      try {
-        const embedding = await generateEmbedding(chunk.content, LOVABLE_API_KEY);
-        chunkRecords.push({
-          document_id: documentId,
-          content: chunk.content,
-          chunk_index: chunk.index,
-          page_number: null,
-          embedding: JSON.stringify(embedding),
-          metadata: { word_count: chunk.content.split(/\s+/).length },
-        });
-      } catch (e) {
-        console.error(`Failed to embed chunk ${chunk.index}:`, e);
-      }
-    }
-
-    if (chunkRecords.length === 0) {
-      await supabase.from("documents").update({ status: "error" }).eq("id", documentId);
-      throw new Error("Failed to generate any embeddings");
-    }
+    // Insert chunks without embeddings (using full-text search instead)
+    const chunkRecords = chunks.map((chunk) => ({
+      document_id: documentId,
+      content: chunk.content,
+      chunk_index: chunk.index,
+      page_number: null,
+      metadata: { word_count: chunk.content.split(/\s+/).length },
+    }));
 
     // Batch insert chunks
     const batchSize = 50;
@@ -215,10 +174,10 @@ serve(async (req) => {
       page_count: Math.ceil(fullText.length / 3000),
     }).eq("id", documentId);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       chunks: chunkRecords.length,
-      summary 
+      summary,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
