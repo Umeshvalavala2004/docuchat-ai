@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -242,11 +242,47 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Local Models (Ollama)</span>
               </div>
               {ollamaStatus === "offline" && (
-                <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 mb-2 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">Ollama is not running</p>
-                    <p className="text-[11px] text-muted-foreground">Start Ollama on your machine to use local models. Install from <a href="https://ollama.ai" target="_blank" rel="noopener" className="text-primary hover:underline">ollama.ai</a></p>
+                <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 mb-3 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">Ollama is not running</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Start the Ollama server to use local models.</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-background border border-border p-3 space-y-2">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Run this command in your terminal:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs font-mono bg-accent/50 px-3 py-2 rounded-lg text-foreground select-all">ollama serve</code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[11px] rounded-lg shrink-0 gap-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText("ollama serve");
+                          toast.success("Command copied to clipboard!");
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-[11px] rounded-lg gap-1.5"
+                      onClick={checkOllama}
+                    >
+                      <RefreshCw className="h-3 w-3" />Retry Connection
+                    </Button>
+                    <a href="https://ollama.ai" target="_blank" rel="noopener">
+                      <Button variant="ghost" size="sm" className="h-8 text-[11px] rounded-lg gap-1.5 text-primary">
+                        <Download className="h-3 w-3" />Install Ollama
+                      </Button>
+                    </a>
                   </div>
                 </div>
               )}
