@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
