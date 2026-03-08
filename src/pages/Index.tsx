@@ -334,6 +334,18 @@ const Index = () => {
             </div>
           )}
 
+          {!sidebarCollapsed ? null : (
+            <WorkspaceSwitcher
+              workspaces={workspaces}
+              activeWorkspace={activeWorkspace}
+              onSwitch={switchWorkspace}
+              onCreate={createWorkspace}
+              onRename={renameWorkspace}
+              onDelete={deleteWorkspace}
+              collapsed
+            />
+          )}
+
           <LanguageSwitcher />
 
           <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-lg ${view === "dashboard" ? "bg-primary/10 text-primary" : ""}`} onClick={() => setView("dashboard")} title="Dashboard">
