@@ -637,6 +637,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   </table>
                 </div>
               </div>
+              </div>
             )}
 
             {/* ── REQUESTS ── */}
