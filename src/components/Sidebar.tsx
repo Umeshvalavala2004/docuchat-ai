@@ -210,7 +210,7 @@ export default function Sidebar({
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: 56 }}
-          className="flex h-full w-14 flex-col items-center border-r border-border bg-card py-3 gap-1.5"
+          className="flex h-full w-14 flex-col items-center border-r border-border glass-card py-3 gap-1.5"
         >
           <Tooltip>
             <TooltipTrigger asChild>
