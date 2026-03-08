@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings";
+type View = "upload" | "chat" | "admin" | "settings" | "search";
 
 const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
