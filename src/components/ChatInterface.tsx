@@ -198,6 +198,10 @@ export default function ChatInterface({
 
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
+    if (docStatus !== "ready") {
+      toast.error("Document is still being processed. Please wait until indexing completes.");
+      return;
+    }
 
     // Parse #mentions from input
     const { cleanedInput, mentionedDocIds: parsedDocIds } = parseMentions(userMessage, allDocuments);
