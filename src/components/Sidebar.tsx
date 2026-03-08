@@ -16,11 +16,13 @@ import {
   X,
   Search,
   Database,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
 import { toast } from "sonner";
 import UserProfile from "@/components/UserProfile";
@@ -32,6 +34,7 @@ interface SidebarProps {
   selectedDocId: string | null;
   onSelectDocument: (docId: string, docName: string) => void;
   onSelectChatSession: (sessionId: string, docId: string, docName: string) => void;
+  onStartMultiDocChat: (docIds: string[], docNames: string[]) => void;
   onNewUpload: () => void;
   onSignOut: () => void;
   collapsed: boolean;
@@ -67,6 +70,7 @@ export default function Sidebar({
   selectedDocId,
   onSelectDocument,
   onSelectChatSession,
+  onStartMultiDocChat,
   onNewUpload,
   onSignOut,
   collapsed,
@@ -79,6 +83,8 @@ export default function Sidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
 
   const loadDocuments = async () => {
     try {
@@ -261,6 +267,26 @@ export default function Sidebar({
         </button>
       </div>
 
+      {/* Multi-select toggle */}
+      {tab === "documents" && documents.filter(d => d.status === "ready").length > 1 && (
+        <div className="px-3 pb-1">
+          <button
+            onClick={() => {
+              setMultiSelectMode(!multiSelectMode);
+              setSelectedDocIds(new Set());
+            }}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors w-full justify-center ${
+              multiSelectMode
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            }`}
+          >
+            <Layers className="h-3 w-3" />
+            {multiSelectMode ? "Cancel multi-select" : "Select multiple"}
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       <ScrollArea className="flex-1 px-3">
         <AnimatePresence mode="wait">
@@ -291,7 +317,9 @@ export default function Sidebar({
                         key={doc.id}
                         layout
                         className={`group rounded-xl transition-all ${
-                          selectedDocId === doc.id
+                          multiSelectMode && selectedDocIds.has(doc.id)
+                            ? "bg-primary/10 ring-1 ring-primary/20"
+                            : selectedDocId === doc.id && !multiSelectMode
                             ? "bg-primary/10 ring-1 ring-primary/20"
                             : doc.status === "ready"
                             ? "hover:bg-accent"
@@ -299,10 +327,28 @@ export default function Sidebar({
                         }`}
                       >
                         <button
-                          onClick={() => doc.status === "ready" && onSelectDocument(doc.id, doc.name)}
+                          onClick={() => {
+                            if (multiSelectMode && doc.status === "ready") {
+                              setSelectedDocIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(doc.id)) next.delete(doc.id);
+                                else next.add(doc.id);
+                                return next;
+                              });
+                            } else if (doc.status === "ready") {
+                              onSelectDocument(doc.id, doc.name);
+                            }
+                          }}
                           className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left text-sm"
                           disabled={doc.status !== "ready"}
                         >
+                          {multiSelectMode && doc.status === "ready" && (
+                            <Checkbox
+                              checked={selectedDocIds.has(doc.id)}
+                              className="mt-0.5 shrink-0 pointer-events-none"
+                              tabIndex={-1}
+                            />
+                          )}
                           {status.icon}
                           <div className="flex-1 min-w-0">
                             {renamingId === doc.id ? (
@@ -438,6 +484,26 @@ export default function Sidebar({
           )}
         </AnimatePresence>
       </ScrollArea>
+
+      {/* Multi-doc chat bar */}
+      {multiSelectMode && selectedDocIds.size >= 2 && (
+        <div className="border-t border-border px-3 py-2">
+          <Button
+            onClick={() => {
+              const ids = Array.from(selectedDocIds);
+              const names = ids.map(id => documents.find(d => d.id === id)?.name || "Document");
+              onStartMultiDocChat(ids, names);
+              setMultiSelectMode(false);
+              setSelectedDocIds(new Set());
+            }}
+            className="w-full gap-2 rounded-xl h-9 text-xs"
+            size="sm"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Chat with {selectedDocIds.size} documents
+          </Button>
+        </div>
+      )}
 
       {/* User Profile Footer */}
       <div className="border-t border-border p-3">

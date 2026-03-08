@@ -17,6 +17,7 @@ const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
@@ -52,7 +53,18 @@ const Index = () => {
 
   const handleSelectDocument = (docId: string, docName: string) => {
     setSelectedDocId(docId);
+    setSelectedDocIds([]);
     setSelectedDocName(docName);
+    setView("chat");
+    setChatSessionId(undefined);
+    setInitialMessages(undefined);
+    setShowPdfViewer(false);
+  };
+
+  const handleStartMultiDocChat = (docIds: string[], docNames: string[]) => {
+    setSelectedDocId(docIds[0]);
+    setSelectedDocIds(docIds);
+    setSelectedDocName(docNames.join(", "));
     setView("chat");
     setChatSessionId(undefined);
     setInitialMessages(undefined);
@@ -95,6 +107,7 @@ const Index = () => {
         selectedDocId={selectedDocId}
         onSelectDocument={handleSelectDocument}
         onSelectChatSession={handleSelectChatSession}
+        onStartMultiDocChat={handleStartMultiDocChat}
         onNewUpload={() => {
           setView("upload");
           setSelectedDocId(null);
@@ -152,11 +165,22 @@ const Index = () => {
                 {/* Chat header */}
                 <div className="flex items-center gap-3 border-b border-border px-5 py-3 bg-card/50 backdrop-blur-sm">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
+                    {selectedDocIds.length > 1 ? (
+                      <Layers className="h-4 w-4 text-primary" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-primary" />
+                    )}
                   </div>
-                  <span className="text-sm font-semibold text-foreground truncate flex-1">
-                    {selectedDocName}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-foreground truncate block">
+                      {selectedDocIds.length > 1 ? `${selectedDocIds.length} Documents` : selectedDocName}
+                    </span>
+                    {selectedDocIds.length > 1 && (
+                      <span className="text-[10px] text-muted-foreground truncate block">
+                        {selectedDocName}
+                      </span>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -177,8 +201,9 @@ const Index = () => {
                   </Button>
                 </div>
                 <ChatInterface
-                  key={`${selectedDocId}-${chatSessionId}`}
+                  key={`${selectedDocId}-${selectedDocIds.join(",")}-${chatSessionId}`}
                   documentId={selectedDocId}
+                  documentIds={selectedDocIds.length > 1 ? selectedDocIds : undefined}
                   documentName={selectedDocName}
                   userId={user.id}
                   chatSessionId={chatSessionId}
