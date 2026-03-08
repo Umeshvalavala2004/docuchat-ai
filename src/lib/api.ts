@@ -10,10 +10,12 @@ export interface Source {
 }
 
 export interface ChatMessage {
+  id?: string;
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
   timestamp?: string;
+  feedback?: "up" | "down" | null;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -204,14 +206,18 @@ export async function getChatSessions(userId: string) {
   return data;
 }
 
-export async function saveMessage(chatSessionId: string, role: string, content: string, sources?: Source[]) {
-  const { error } = await supabase.from("messages").insert({
+export async function saveMessage(chatSessionId: string, role: string, content: string, sources?: Source[]): Promise<string | null> {
+  const { data, error } = await supabase.from("messages").insert({
     chat_session_id: chatSessionId,
     role,
     content,
     sources: sources ? JSON.stringify(sources) : "[]",
-  });
-  if (error) console.error("Failed to save message:", error);
+  }).select("id").single();
+  if (error) {
+    console.error("Failed to save message:", error);
+    return null;
+  }
+  return data?.id || null;
 }
 
 export async function getChatMessages(chatSessionId: string) {
@@ -232,6 +238,14 @@ export async function deleteDocument(documentId: string) {
 export async function deleteChatSession(sessionId: string) {
   const { error } = await supabase.from("chat_sessions").delete().eq("id", sessionId);
   if (error) throw error;
+}
+
+export async function submitFeedback(messageId: string, userId: string, rating: "up" | "down") {
+  const { error } = await supabase.from("feedback").upsert(
+    { message_id: messageId, user_id: userId, rating },
+    { onConflict: "message_id,user_id" }
+  );
+  if (error) console.error("Failed to save feedback:", error);
 }
 
 export async function getSuggestedQuestions(documentId: string): Promise<string[]> {
@@ -262,4 +276,23 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function exportChatAsText(messages: ChatMessage[], documentName: string): void {
+  const header = `DocChat AI - Conversation with "${documentName}"\nExported: ${new Date().toLocaleString()}\n${"=".repeat(60)}\n\n`;
+  const body = messages
+    .map((m) => {
+      const role = m.role === "user" ? "You" : "AI";
+      const time = m.timestamp ? ` (${new Date(m.timestamp).toLocaleString()})` : "";
+      return `${role}${time}:\n${m.content}\n`;
+    })
+    .join("\n---\n\n");
+  
+  const blob = new Blob([header + body], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chat-${documentName.replace(/[^a-z0-9]/gi, "_")}-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
