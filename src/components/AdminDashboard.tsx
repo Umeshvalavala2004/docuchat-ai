@@ -63,6 +63,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
