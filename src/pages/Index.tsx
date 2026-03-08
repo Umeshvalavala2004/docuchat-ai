@@ -329,6 +329,10 @@ const Index = () => {
 
           <LanguageSwitcher />
 
+          <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-lg ${view === "dashboard" ? "bg-primary/10 text-primary" : ""}`} onClick={() => setView("dashboard")} title="Dashboard">
+            <LayoutDashboard className="h-4 w-4" />
+          </Button>
+
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title={t("enterprise_search")}>
             <Search className="h-4 w-4" />
           </Button>
