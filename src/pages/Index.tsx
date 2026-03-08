@@ -107,6 +107,7 @@ const Index = () => {
         selectedDocId={selectedDocId}
         onSelectDocument={handleSelectDocument}
         onSelectChatSession={handleSelectChatSession}
+        onStartMultiDocChat={handleStartMultiDocChat}
         onNewUpload={() => {
           setView("upload");
           setSelectedDocId(null);
