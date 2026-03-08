@@ -196,6 +196,9 @@ const Index = () => {
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
           usageInfo={usage}
+          brandingAppName={branding.appName}
+          brandingSubtitle={branding.subtitle}
+          brandingLogoUrl={branding.logoUrl}
         />
       )}
 
