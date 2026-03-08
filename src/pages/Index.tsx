@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import AuthPage from "@/components/AuthPage";
@@ -9,6 +9,7 @@ import PdfViewer from "@/components/PdfViewer";
 import { FileText, Upload, Layers } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import type { Source, ChatMessage } from "@/lib/api";
+import type { TextAction } from "@/components/TextSelectionToolbar";
 
 type View = "upload" | "chat";
 
@@ -23,6 +24,17 @@ const Index = () => {
   const [initialMessages, setInitialMessages] = useState<ChatMessage[] | undefined>();
   const [highlightPage, setHighlightPage] = useState<number | null>(null);
   const [highlightText, setHighlightText] = useState<string | null>(null);
+  const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
+
+  const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
+    const prompts: Record<TextAction, string> = {
+      explain: `Explain the following text from the document (page ${pageNumber}) in simple terms:\n\n"${text}"`,
+      summarize: `Summarize the following text from the document (page ${pageNumber}):\n\n"${text}"`,
+      rewrite: `Rewrite the following text from the document (page ${pageNumber}) in clearer language:\n\n"${text}"`,
+      ask: text,
+    };
+    setInjectedPrompt(prompts[action]);
+  }, []);
 
   if (loading) {
     return (
@@ -110,6 +122,7 @@ const Index = () => {
     }
   };
 
+
   const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
   const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
 
@@ -185,6 +198,7 @@ const Index = () => {
                   highlightPage={highlightPage}
                   highlightText={highlightText}
                   inline={true}
+                  onTextAction={handleTextAction}
                 />
               </div>
 
@@ -208,6 +222,8 @@ const Index = () => {
                   initialMessages={initialMessages}
                   onChatSessionCreated={(id) => setChatSessionId(id)}
                   onCitationClick={handleCitationClick}
+                  injectedPrompt={injectedPrompt}
+                  onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                 />
               </div>
             </motion.div>

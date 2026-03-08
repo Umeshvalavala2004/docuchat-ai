@@ -16,6 +16,8 @@ interface ChatInterfaceProps {
   initialMessages?: ChatMessage[];
   onChatSessionCreated?: (id: string) => void;
   onCitationClick?: (pageNumber: number | null, text?: string) => void;
+  injectedPrompt?: string;
+  onInjectedPromptConsumed?: () => void;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -130,6 +132,8 @@ export default function ChatInterface({
   initialMessages,
   onChatSessionCreated,
   onCitationClick,
+  injectedPrompt,
+  onInjectedPromptConsumed,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
@@ -146,6 +150,14 @@ export default function ChatInterface({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handle injected prompts from text selection toolbar
+  useEffect(() => {
+    if (injectedPrompt && !isLoading) {
+      sendMessage(injectedPrompt);
+      onInjectedPromptConsumed?.();
+    }
+  }, [injectedPrompt]);
 
   // Load suggested questions + key points for new chats
   useEffect(() => {

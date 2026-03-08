@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
+import TextSelectionToolbar, { type TextAction } from "@/components/TextSelectionToolbar";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -21,6 +22,7 @@ interface PdfViewerProps {
   highlightPage?: number | null;
   highlightText?: string | null;
   inline?: boolean;
+  onTextAction?: (action: TextAction, text: string, pageNumber: number) => void;
 }
 
 export default function PdfViewer({
@@ -30,6 +32,7 @@ export default function PdfViewer({
   highlightPage,
   highlightText,
   inline = false,
+  onTextAction,
 }: PdfViewerProps) {
   const [expanded, setExpanded] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -261,8 +264,14 @@ export default function PdfViewer({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto bg-muted/20"
+          className="flex-1 overflow-auto bg-muted/20 relative"
         >
+          {/* Text Selection Toolbar */}
+          {onTextAction && (
+            <TextSelectionToolbar
+              onAction={(action, text) => onTextAction(action, text, currentPage)}
+            />
+          )}
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-3">
