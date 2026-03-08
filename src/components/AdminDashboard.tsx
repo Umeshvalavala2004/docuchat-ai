@@ -594,111 +594,197 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             {/* ── USERS ── */}
             {tab === "users" && (
               <div className="space-y-3">
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="h-9 pl-9 rounded-xl text-xs"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search by name or email..."
+                      className="h-9 pl-9 rounded-xl text-xs"
+                    />
+                  </div>
+                  {selectedUsers.size > 0 && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedUsers.size} selected</span>
+                  )}
                 </div>
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-accent/30">
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">User</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Provider</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Role</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Documents</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Joined</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Last Login</th>
-                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {users
-                        .filter((u) => {
-                          if (!userSearch.trim()) return true;
-                          const q = userSearch.toLowerCase();
-                          return (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
-                        })
-                        .map((u) => (
-                        <tr key={u.id} className="hover:bg-accent/20 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              {u.profile_picture ? (
-                                <img src={u.profile_picture} className="h-7 w-7 rounded-full object-cover" alt="" />
-                              ) : (
-                                <div className="h-7 w-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                                  {(u.name || "?")[0]?.toUpperCase()}
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-medium text-foreground">{u.name || "Unknown"}</p>
-                                <p className="text-[10px] text-muted-foreground">{u.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3"><span className="capitalize text-muted-foreground">{u.provider}</span></td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={u.role || "free_user"}
-                              onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                              disabled={changingRole === u.id}
-                              className={`text-xs font-medium rounded-lg border border-border bg-background px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
-                                u.role === "admin" ? "text-primary" :
-                                u.role === "pro_user" ? "text-amber-600" :
-                                "text-muted-foreground"
-                              }`}
+
+                {/* Bulk action bar */}
+                <AnimatePresence>
+                  {selectedUsers.size > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5">
+                        <span className="text-xs font-medium text-foreground mr-1">{selectedUsers.size} user(s) selected</span>
+                        <div className="h-4 w-px bg-border" />
+                        <span className="text-[10px] text-muted-foreground">Change role:</span>
+                        {(["free_user", "pro_user"] as const).map((role) => (
+                          <Button
+                            key={role}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[11px] px-2.5 rounded-lg"
+                            disabled={bulkProcessing}
+                            onClick={() => handleBulkRoleChange(role)}
+                          >
+                            {role === "free_user" ? "Free" : "Pro"}
+                          </Button>
+                        ))}
+                        <div className="h-4 w-px bg-border" />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-[11px] px-2.5 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive gap-1"
+                              disabled={bulkProcessing}
                             >
-                              <option value="free_user">Free User</option>
-                              <option value="pro_user">Pro User</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                            {changingRole === u.id && <Loader2 className="inline ml-1.5 h-3 w-3 animate-spin text-primary" />}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">{u.doc_count}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{u.last_login ? new Date(u.last_login).toLocaleDateString() : "—"}</td>
-                          <td className="px-4 py-3">
-                            {u.role !== "admin" ? (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-1" disabled={deletingUser === u.id}>
-                                    {deletingUser === u.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                                    Delete
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete User Account</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will permanently delete <strong>{u.name || u.email}</strong>'s account and all associated data. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      onClick={() => handleDeleteUser(u.id)}
-                                    >
-                                      Delete Account
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">—</span>
-                            )}
-                          </td>
+                              <Trash2 className="h-3 w-3" />
+                              Delete All
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete {selectedUsers.size} Users</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete {selectedUsers.size} user account(s) and all their data. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={handleBulkDelete}
+                              >
+                                Delete {selectedUsers.size} Users
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        {bulkProcessing && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary ml-1" />}
+                        <div className="flex-1" />
+                        <Button size="sm" variant="ghost" className="h-7 text-[11px] px-2" onClick={() => setSelectedUsers(new Set())}>
+                          Clear
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-accent/30">
+                          <th className="px-3 py-3 w-8">
+                            <input
+                              type="checkbox"
+                              checked={allSelectableSelected}
+                              onChange={toggleSelectAll}
+                              className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                            />
+                          </th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">User</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Provider</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Role</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Documents</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Joined</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Last Login</th>
+                          <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {filteredUsers.map((u) => (
+                          <tr key={u.id} className={`hover:bg-accent/20 transition-colors ${selectedUsers.has(u.id) ? "bg-primary/5" : ""}`}>
+                            <td className="px-3 py-3">
+                              {u.role !== "admin" ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedUsers.has(u.id)}
+                                  onChange={() => toggleSelectUser(u.id)}
+                                  className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                                />
+                              ) : (
+                                <span className="block h-3.5 w-3.5" />
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                {u.profile_picture ? (
+                                  <img src={u.profile_picture} className="h-7 w-7 rounded-full object-cover" alt="" />
+                                ) : (
+                                  <div className="h-7 w-7 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                                    {(u.name || "?")[0]?.toUpperCase()}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-medium text-foreground">{u.name || "Unknown"}</p>
+                                  <p className="text-[10px] text-muted-foreground">{u.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3"><span className="capitalize text-muted-foreground">{u.provider}</span></td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={u.role || "free_user"}
+                                onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                                disabled={changingRole === u.id}
+                                className={`text-xs font-medium rounded-lg border border-border bg-background px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
+                                  u.role === "admin" ? "text-primary" :
+                                  u.role === "pro_user" ? "text-amber-600" :
+                                  "text-muted-foreground"
+                                }`}
+                              >
+                                <option value="free_user">Free User</option>
+                                <option value="pro_user">Pro User</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                              {changingRole === u.id && <Loader2 className="inline ml-1.5 h-3 w-3 animate-spin text-primary" />}
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">{u.doc_count}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{u.last_login ? new Date(u.last_login).toLocaleDateString() : "—"}</td>
+                            <td className="px-4 py-3">
+                              {u.role !== "admin" ? (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-1" disabled={deletingUser === u.id}>
+                                      {deletingUser === u.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete <strong>{u.name || u.email}</strong>'s account and all associated data. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => handleDeleteUser(u.id)}
+                                      >
+                                        Delete Account
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
               </div>
             )}
 
