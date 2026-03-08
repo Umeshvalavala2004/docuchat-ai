@@ -133,7 +133,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">Theme</h3>
-                  <p className="text-xs text-muted-foreground mb-4">Choose how DocChat AI looks to you</p>
+                  <p className="text-xs text-muted-foreground mb-4">Choose how Interface_IQ looks to you</p>
                   <div className="grid grid-cols-3 gap-3">
                     {themeOptions.map((t) => (
                       <button

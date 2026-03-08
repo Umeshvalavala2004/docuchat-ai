@@ -290,6 +290,10 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           </div>
         </motion.div>
       </div>
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+      </div>
     </div>
   );
 }
