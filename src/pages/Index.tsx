@@ -14,6 +14,8 @@ import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
 import HomeHero from "@/components/HomeHero";
+import type { ToolTab } from "@/components/HomeHero";
+import ToolResults from "@/components/ToolResults";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
