@@ -407,6 +407,7 @@ const Index = () => {
                           onCitationClick={handleCitationClick}
                           injectedPrompt={injectedPrompt}
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
+                          modelConfig={activeModel}
                         />
                       </div>
                     </ResizablePanel>
