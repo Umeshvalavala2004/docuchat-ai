@@ -355,6 +355,19 @@ const Index = () => {
             </div>
           )}
 
+          {/* Desktop toggle for PDF panel */}
+          {!isMobile && showSplitView && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg"
+              onClick={() => setPdfPanelOpen(!pdfPanelOpen)}
+              title={pdfPanelOpen ? "Hide PDF" : "Show PDF"}
+            >
+              {pdfPanelOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            </Button>
+          )}
+
           {!sidebarCollapsed ? null : (
             <WorkspaceSwitcher
               workspaces={workspaces}
