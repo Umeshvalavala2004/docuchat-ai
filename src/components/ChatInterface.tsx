@@ -475,13 +475,13 @@ export default function ChatInterface({
         <div className="mx-auto max-w-3xl space-y-5">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex gap-2 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-                    <Bot className="h-4 w-4 text-primary-foreground" />
+                  <div className="mt-1 flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
+                    <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
                   </div>
                 )}
-                <div className="max-w-[85%] min-w-0">
+                <div className="max-w-[90%] sm:max-w-[85%] min-w-0">
                   {/* Mentioned docs tag above user message */}
                   {msg.role === "user" && msg.mentionedDocs && msg.mentionedDocs.length > 0 && (
                     <div className="flex items-center gap-1 mb-1 justify-end flex-wrap">
