@@ -16,9 +16,10 @@ import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
 import EnterpriseSearch from "@/components/EnterpriseSearch";
+import ToolsDashboard from "@/components/ToolsDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings" | "search";
+type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools";
 
 const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -193,6 +194,8 @@ const Index = () => {
           onAdminClick={() => setView("admin")}
           onSettingsClick={() => setView("settings")}
           onSearchClick={() => setView("search")}
+          onToolsClick={() => setView("tools")}
+          onInsertPrompt={(prompt) => { setInjectedPrompt(prompt); if (view !== "chat") setView("upload"); }}
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
           usageInfo={usage}
@@ -265,6 +268,14 @@ const Index = () => {
                 <span className="font-medium text-foreground">Enterprise Search</span>
               </div>
             )}
+            {view === "tools" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg gradient-primary flex items-center justify-center">
+                  <Sparkles className="h-3 w-3 text-primary-foreground" />
+                </div>
+                <span className="font-medium text-foreground">AI Tools</span>
+              </div>
+            )}
           </div>
 
           {/* Mobile toggle for PDF/Chat */}
@@ -318,6 +329,10 @@ const Index = () => {
                   onSelectDocument={(docId, docName) => { handleSelectDocument(docId, docName); }}
                   onClose={() => setView("upload")}
                 />
+              </motion.div>
+            ) : view === "tools" ? (
+              <motion.div key="tools" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <ToolsDashboard userId={user.id} onBack={() => setView("upload")} />
               </motion.div>
             ) : view === "upload" || !selectedDocId ? (
               <motion.div
