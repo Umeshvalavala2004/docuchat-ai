@@ -34,6 +34,35 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
     toast.success(`Response style set to ${style}`);
   };
   const [saving, setSaving] = useState(false);
+  const [uploadingPic, setUploadingPic] = useState(false);
+
+  const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setUploadingPic(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const filePath = `${userId}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("profile-pictures").upload(filePath, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("profile-pictures").getPublicUrl(filePath);
+      const { error: updateErr } = await supabase.from("profiles").update({ profile_picture: urlData.publicUrl }).eq("id", userId);
+      if (updateErr) throw updateErr;
+      toast.success("Profile picture updated! Refresh to see changes.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload profile picture");
+    }
+    setUploadingPic(false);
+    e.target.value = "";
+  };
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "dark") return "dark";
