@@ -387,7 +387,24 @@ export default function ChatInterface({
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {messages.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex h-full flex-col items-center justify-center text-center">
-            {loadingQuestions ? <ChatSkeleton /> : (
+            {docStatus !== "ready" && docStatus !== "error" ? (
+              <div className="flex flex-col items-center gap-4 opacity-60">
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl bg-muted p-6 mb-2">
+                  <Loader2 className="h-12 w-12 text-muted-foreground animate-spin" />
+                </motion.div>
+                <h3 className="text-xl font-bold text-muted-foreground tracking-tight">Preparing your document…</h3>
+                <p className="max-w-sm text-sm text-muted-foreground/70 leading-relaxed">
+                  Questions and key points will appear here once indexing is complete.
+                </p>
+                <div className="mt-4 grid gap-2 w-full max-w-md">
+                  {["What is this document about?", "Summarize the key points", "What are the main findings?"].map((q) => (
+                    <div key={q} className="rounded-xl border border-border/50 bg-card/50 px-4 py-3 text-sm text-muted-foreground/40 text-left cursor-not-allowed select-none">
+                      <span className="text-muted-foreground/30 mr-2">→</span>{q}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : loadingQuestions ? <ChatSkeleton /> : (
               <>
                 <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl gradient-primary p-6 mb-6 shadow-glow">
                   <Sparkles className="h-12 w-12 text-primary-foreground" />
