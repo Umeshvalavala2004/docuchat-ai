@@ -242,6 +242,23 @@ export default function ChatInterface({
 
   return (
     <div className="flex h-full flex-col bg-background/50">
+      {/* Model indicator + Performance bar */}
+      <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/50 bg-card/50">
+        <Badge variant="outline" className={`text-[10px] gap-1 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
+          {modelConfig?.model_type === "local" ? <Monitor className="h-3 w-3" /> : <Cloud className="h-3 w-3" />}
+          {modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})
+        </Badge>
+        {responseTime !== null && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Timer className="h-3 w-3" />{(responseTime / 1000).toFixed(1)}s
+          </span>
+        )}
+        {tokenCount !== null && (
+          <span className="text-[10px] text-muted-foreground">
+            {tokenCount} tokens
+          </span>
+        )}
+      </div>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {messages.length === 0 && (
