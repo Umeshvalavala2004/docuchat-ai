@@ -18,6 +18,16 @@ export interface ChatMessage {
   feedback?: "up" | "down" | null;
 }
 
+export interface RetrievalMetrics {
+  totalCandidates: number;
+  selectedChunks: number;
+  topScore: number;
+  avgScore: number;
+  retrievalTimeMs: number;
+  searchMethods: Record<string, number>;
+  reranked: boolean;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 export async function streamChat({
@@ -27,6 +37,7 @@ export async function streamChat({
   chatSessionId,
   history,
   onSources,
+  onMetrics,
   onDelta,
   onDone,
   onError,
@@ -37,6 +48,7 @@ export async function streamChat({
   chatSessionId?: string;
   history: ChatMessage[];
   onSources: (sources: Source[]) => void;
+  onMetrics?: (metrics: RetrievalMetrics) => void;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -98,6 +110,7 @@ export async function streamChat({
           const parsed = JSON.parse(jsonStr);
           if (parsed.sources && !sourcesReceived) {
             onSources(parsed.sources);
+            if (parsed.retrievalMetrics) onMetrics?.(parsed.retrievalMetrics);
             sourcesReceived = true;
             continue;
           }

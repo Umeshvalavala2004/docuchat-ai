@@ -4,7 +4,7 @@ import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, T
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
-import { streamChat, type ChatMessage, type Source, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
+import { streamChat, type ChatMessage, type Source, type RetrievalMetrics, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
 import { toast } from "sonner";
 import RagDebugPanel from "@/components/RagDebugPanel";
 
@@ -113,6 +113,7 @@ export default function ChatInterface({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeSources, setActiveSources] = useState<Source[]>([]);
+  const [activeMetrics, setActiveMetrics] = useState<RetrievalMetrics | null>(null);
   const [sessionId, setSessionId] = useState(chatSessionId);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
@@ -162,6 +163,7 @@ export default function ChatInterface({
     await streamChat({
       message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
       onSources: (s) => { sources = s; setActiveSources(s); },
+      onMetrics: (m) => { setActiveMetrics(m); },
       onDelta: (chunk) => {
         assistantContent += chunk;
         setMessages((prev) => {
@@ -312,7 +314,14 @@ export default function ChatInterface({
       {/* RAG Debug Panel */}
       {activeSources.length > 0 && (
         <RagDebugPanel
-          debugInfo={{ sources: activeSources, modelUsed: "Gemini 3 Flash" }}
+          debugInfo={{
+            sources: activeSources,
+            modelUsed: "Gemini 3 Flash",
+            totalChunksSearched: activeMetrics?.totalCandidates,
+            processingTimeMs: activeMetrics?.retrievalTimeMs,
+            searchMethods: activeMetrics?.searchMethods,
+            reranked: activeMetrics?.reranked,
+          }}
           onCitationClick={onCitationClick}
           documentName={documentName}
         />

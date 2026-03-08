@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bug, ChevronDown, ChevronUp, FileText, Search, Zap, Brain, BarChart3 } from "lucide-react";
+import { Bug, ChevronDown, ChevronUp, FileText, Search, Zap, Brain, BarChart3, Clock, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Source } from "@/lib/api";
@@ -12,6 +12,7 @@ interface RagDebugInfo {
   processingTimeMs?: number;
   modelUsed?: string;
   contextTokens?: number;
+  reranked?: boolean;
 }
 
 interface RagDebugPanelProps {
@@ -27,6 +28,8 @@ export default function RagDebugPanel({ debugInfo, onCitationClick, documentName
   if (!debugInfo || debugInfo.sources.length === 0) return null;
 
   const sortedSources = [...debugInfo.sources].sort((a, b) => b.score - a.score);
+  const topScore = sortedSources[0]?.score ?? 0;
+  const avgScore = sortedSources.reduce((sum, s) => sum + s.score, 0) / sortedSources.length;
 
   return (
     <div className="border-t border-border">
@@ -36,6 +39,9 @@ export default function RagDebugPanel({ debugInfo, onCitationClick, documentName
       >
         <Bug className="h-3.5 w-3.5 text-primary" />
         <span>RAG Debug Panel</span>
+        {debugInfo.reranked && (
+          <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full">Reranked</span>
+        )}
         <span className="ml-auto text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">
           {debugInfo.sources.length} chunks
         </span>
@@ -52,11 +58,18 @@ export default function RagDebugPanel({ debugInfo, onCitationClick, documentName
           >
             <div className="px-4 pb-4 space-y-3">
               {/* Stats row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div className="rounded-lg bg-accent/50 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Layers className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] font-medium text-muted-foreground">Candidates</span>
+                  </div>
+                  <p className="text-sm font-bold text-foreground">{debugInfo.totalChunksSearched ?? "—"}</p>
+                </div>
                 <div className="rounded-lg bg-accent/50 p-2.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Search className="h-3 w-3 text-primary" />
-                    <span className="text-[10px] font-medium text-muted-foreground">Chunks Retrieved</span>
+                    <span className="text-[10px] font-medium text-muted-foreground">Selected</span>
                   </div>
                   <p className="text-sm font-bold text-foreground">{debugInfo.sources.length}</p>
                 </div>
@@ -65,25 +78,42 @@ export default function RagDebugPanel({ debugInfo, onCitationClick, documentName
                     <Zap className="h-3 w-3 text-warning" />
                     <span className="text-[10px] font-medium text-muted-foreground">Top Score</span>
                   </div>
-                  <p className="text-sm font-bold text-foreground">{(sortedSources[0]?.score * 100).toFixed(1)}%</p>
-                </div>
-                <div className="rounded-lg bg-accent/50 p-2.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Brain className="h-3 w-3 text-success" />
-                    <span className="text-[10px] font-medium text-muted-foreground">Model</span>
-                  </div>
-                  <p className="text-sm font-bold text-foreground truncate">{debugInfo.modelUsed || "Gemini Flash"}</p>
+                  <p className="text-sm font-bold text-foreground">{(topScore * 100).toFixed(1)}%</p>
                 </div>
                 <div className="rounded-lg bg-accent/50 p-2.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <BarChart3 className="h-3 w-3 text-primary" />
                     <span className="text-[10px] font-medium text-muted-foreground">Avg Score</span>
                   </div>
-                  <p className="text-sm font-bold text-foreground">
-                    {(sortedSources.reduce((sum, s) => sum + s.score, 0) / sortedSources.length * 100).toFixed(1)}%
-                  </p>
+                  <p className="text-sm font-bold text-foreground">{(avgScore * 100).toFixed(1)}%</p>
+                </div>
+                <div className="rounded-lg bg-accent/50 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Brain className="h-3 w-3 text-success" />
+                    <span className="text-[10px] font-medium text-muted-foreground">Model</span>
+                  </div>
+                  <p className="text-sm font-bold text-foreground truncate">{debugInfo.modelUsed || "—"}</p>
+                </div>
+                <div className="rounded-lg bg-accent/50 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] font-medium text-muted-foreground">Retrieval</span>
+                  </div>
+                  <p className="text-sm font-bold text-foreground">{debugInfo.processingTimeMs ? `${debugInfo.processingTimeMs}ms` : "—"}</p>
                 </div>
               </div>
+
+              {/* Search methods */}
+              {debugInfo.searchMethods && Object.keys(debugInfo.searchMethods).length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground font-medium">Methods:</span>
+                  {Object.entries(debugInfo.searchMethods).map(([method, count]) => (
+                    <span key={method} className="text-[10px] bg-accent px-2 py-0.5 rounded-full text-foreground">
+                      {method}: {count}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Relevance bar chart */}
               <div className="rounded-xl border border-border bg-card p-3">
