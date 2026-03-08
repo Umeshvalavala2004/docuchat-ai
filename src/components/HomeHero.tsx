@@ -261,6 +261,8 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
         </div>
 
       </motion.div>
+
+      <TestimonialCarousel />
     </div>
   );
 }
