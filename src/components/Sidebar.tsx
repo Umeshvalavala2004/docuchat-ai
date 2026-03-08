@@ -15,7 +15,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
+import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize, moveDocumentToWorkspace } from "@/lib/api";
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem,
+  ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent, ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import { ArrowRightLeft } from "lucide-react";
 import { toggleDocumentFavorite, toggleDocumentPinned, setDocumentReferenceTag } from "@/lib/documentActions";
 import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
