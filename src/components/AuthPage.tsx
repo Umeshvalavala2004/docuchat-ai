@@ -129,8 +129,8 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
               <FileText className="h-7 w-7 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">DocChat AI</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Chat with your documents using AI</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Interface_IQ</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Powered by Interface_IQ</p>
           </div>
 
           <div className="mb-6">
