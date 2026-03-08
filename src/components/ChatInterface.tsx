@@ -614,7 +614,7 @@ export default function ChatInterface({
       )}
 
       {/* Input */}
-      <div className="border-t border-border glass p-4">
+      <div className="border-t border-border glass p-3 sm:p-4">
         <div className="mx-auto max-w-3xl">
           {/* Mentioned docs indicator */}
           {mentionedDocs.length > 0 && (
