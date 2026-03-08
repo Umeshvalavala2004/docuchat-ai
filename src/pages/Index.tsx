@@ -301,7 +301,7 @@ const Index = () => {
               </motion.div>
             ) : view === "settings" ? (
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
-                <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} />
+                <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} currentModel={activeModel} onModelChange={updateModel} />
               </motion.div>
             ) : view === "search" ? (
               <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
