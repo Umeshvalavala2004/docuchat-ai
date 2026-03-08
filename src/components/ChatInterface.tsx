@@ -118,7 +118,7 @@ function ChatSkeleton() {
 
 export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
-  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId,
+  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId, onDocumentDeleted,
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
