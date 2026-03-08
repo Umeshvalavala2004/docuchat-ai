@@ -532,7 +532,7 @@ export default function ChatInterface({
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Avatar className="h-9 w-9 rounded-xl border border-border shadow-sm cursor-pointer">
+                          <Avatar className="h-7 w-7 sm:h-9 sm:w-9 rounded-xl border border-border shadow-sm cursor-pointer">
                             {profile?.profile_picture ? (
                               <AvatarImage src={profile.profile_picture} alt="You" className="rounded-xl object-cover" />
                             ) : null}
