@@ -720,15 +720,37 @@ export default function Sidebar({
 
       {/* Account / Plan Footer */}
       <div className="border-t border-border p-3 space-y-2">
-        {/* Upgrade banner */}
-        <button
-          onClick={() => toast.info("Pro upgrade coming soon!")}
-          className="flex items-center gap-2 w-full rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors"
-        >
-          <Crown className="h-3.5 w-3.5" />
-          <span className="flex-1 text-left">Upgrade to Pro</span>
-          <ChevronRight className="h-3 w-3" />
-        </button>
+        {/* Admin dashboard link */}
+        {userRole === "admin" && onAdminClick && (
+          <button
+            onClick={onAdminClick}
+            className="flex items-center gap-2 w-full rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            <span className="flex-1 text-left">Admin Dashboard</span>
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        )}
+
+        {/* Upgrade banner - only for free users */}
+        {userRole === "free_user" && (
+          <button
+            onClick={onUpgradeClick}
+            className="flex items-center gap-2 w-full rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors"
+          >
+            <Crown className="h-3.5 w-3.5" />
+            <span className="flex-1 text-left">Upgrade to Pro</span>
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        )}
+
+        {/* Pro badge */}
+        {userRole === "pro_user" && (
+          <div className="flex items-center gap-2 w-full rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <Crown className="h-3.5 w-3.5" />
+            <span>Pro Plan</span>
+          </div>
+        )}
 
         {/* User info */}
         <div className="flex items-center gap-2.5">
@@ -739,8 +761,8 @@ export default function Sidebar({
             <p className="truncate text-xs font-medium text-foreground">
               {user.email?.split("@")[0]}
             </p>
-            <p className="truncate text-[10px] text-muted-foreground">
-              Free Plan
+            <p className="truncate text-[10px] text-muted-foreground capitalize">
+              {userRole === "admin" ? "Administrator" : userRole === "pro_user" ? "Pro Plan" : "Free Plan"}
             </p>
           </div>
           <button
