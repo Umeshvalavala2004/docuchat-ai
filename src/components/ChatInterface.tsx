@@ -145,10 +145,16 @@ export default function ChatInterface({
     }
   }, [documentId, messages.length]);
 
+  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [tokenCount, setTokenCount] = useState<number | null>(null);
+
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
     setInput("");
     setIsLoading(true);
+    setResponseTime(null);
+    setTokenCount(null);
+    const startTime = performance.now();
     const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMsg]);
     let currentSessionId = sessionId;
@@ -163,30 +169,64 @@ export default function ChatInterface({
     if (currentSessionId) await saveMessage(currentSessionId, "user", userMessage);
     let assistantContent = "";
     let sources: Source[] = [];
-    await streamChat({
-      message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
-      onSources: (s) => { sources = s; setActiveSources(s); },
-      onMetrics: (m) => { setActiveMetrics(m); },
-      onDelta: (chunk) => {
-        assistantContent += chunk;
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-          return [...prev, { role: "assistant", content: assistantContent, sources, timestamp: new Date().toISOString() }];
-        });
-      },
-      onDone: async () => {
-        setIsLoading(false);
-        let assistantMsgId: string | null = null;
-        if (currentSessionId) assistantMsgId = await saveMessage(currentSessionId, "assistant", assistantContent, sources);
-        setMessages((prev) => prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m));
-      },
-      onError: (error) => {
-        setIsLoading(false);
-        toast.error(error);
-        setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
-      },
-    });
+
+    const isLocalModel = modelConfig?.model_type === "local";
+
+    if (isLocalModel && modelConfig) {
+      // Local Ollama model
+      await streamChatLocal({
+        message: userMessage,
+        modelId: modelConfig.model_id,
+        ollamaEndpoint: modelConfig.ollama_endpoint,
+        onDelta: (chunk) => {
+          assistantContent += chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+            return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date().toISOString() }];
+          });
+        },
+        onDone: async (metrics) => {
+          setIsLoading(false);
+          setResponseTime(Math.round(performance.now() - startTime));
+          if (metrics.evalCount) setTokenCount(metrics.evalCount);
+          if (currentSessionId) await saveMessage(currentSessionId, "assistant", assistantContent);
+        },
+        onError: (error) => {
+          setIsLoading(false);
+          toast.error(error);
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
+        },
+      });
+    } else {
+      // Cloud model via edge function
+      await streamChat({
+        message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
+        modelId: modelConfig?.model_id,
+        onSources: (s) => { sources = s; setActiveSources(s); },
+        onMetrics: (m) => { setActiveMetrics(m); },
+        onDelta: (chunk) => {
+          assistantContent += chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+            return [...prev, { role: "assistant", content: assistantContent, sources, timestamp: new Date().toISOString() }];
+          });
+        },
+        onDone: async () => {
+          setIsLoading(false);
+          setResponseTime(Math.round(performance.now() - startTime));
+          let assistantMsgId: string | null = null;
+          if (currentSessionId) assistantMsgId = await saveMessage(currentSessionId, "assistant", assistantContent, sources);
+          setMessages((prev) => prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m));
+        },
+        onError: (error) => {
+          setIsLoading(false);
+          toast.error(error);
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
+        },
+      });
+    }
   };
 
   const handleRegenerate = async (messageIndex: number) => {
