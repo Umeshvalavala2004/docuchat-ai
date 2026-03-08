@@ -76,6 +76,7 @@ const Index = () => {
     setView("upload");
   }, []);
 
+  const handleToolProcess = (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => {
     setActiveToolType(toolType);
     setToolDocId(documentId);
     setToolText(text);
