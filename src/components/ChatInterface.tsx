@@ -15,6 +15,7 @@ interface ChatInterfaceProps {
   chatSessionId?: string;
   initialMessages?: ChatMessage[];
   onChatSessionCreated?: (id: string) => void;
+  onCitationClick?: (pageNumber: number | null, text?: string) => void;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -65,26 +66,33 @@ function FeedbackButtons({ messageId, userId, initialFeedback }: { messageId?: s
   );
 }
 
-function ExpandableSource({ src, index }: { src: Source; index: number }) {
+function ExpandableSource({ src, index, onNavigate }: { src: Source; index: number; onNavigate?: (page: number | null, text?: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <button
-      onClick={() => setExpanded(!expanded)}
-      className="flex flex-col w-full rounded-lg bg-background/80 border border-border/30 p-2 text-left text-xs hover:bg-background hover:border-primary/30 transition-all"
-    >
-      <div className="flex items-start gap-2">
+    <div className="flex flex-col w-full rounded-lg bg-background/80 border border-border/30 p-2 text-left text-xs hover:bg-background hover:border-primary/30 transition-all">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-start gap-2 w-full text-left"
+      >
         <FileText className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
         <span className={`text-muted-foreground ${expanded ? "" : "line-clamp-2"}`}>
           {src.content}
         </span>
         {expanded ? <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
-      </div>
+      </button>
       <div className="flex items-center gap-2 mt-1 ml-5">
         <span className="text-[10px] text-muted-foreground/70">Chunk {src.chunk_index + 1}</span>
-        {src.page_number && <span className="text-[10px] text-muted-foreground/70">• Page {src.page_number}</span>}
+        {src.page_number && (
+          <button
+            onClick={() => onNavigate?.(src.page_number, src.content?.slice(0, 80))}
+            className="text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer font-medium"
+          >
+            📄 Page {src.page_number}
+          </button>
+        )}
         {src.score > 0 && <span className="text-[10px] text-primary/60">{(src.score * 100).toFixed(0)}% match</span>}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -121,6 +129,7 @@ export default function ChatInterface({
   chatSessionId,
   initialMessages,
   onChatSessionCreated,
+  onCitationClick,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
@@ -375,7 +384,7 @@ export default function ChatInterface({
                         </p>
                         <div className="grid gap-1.5">
                           {msg.sources.slice(0, 4).map((src, j) => (
-                            <ExpandableSource key={j} src={src} index={j} />
+                            <ExpandableSource key={j} src={src} index={j} onNavigate={onCitationClick} />
                           ))}
                         </div>
                       </div>
