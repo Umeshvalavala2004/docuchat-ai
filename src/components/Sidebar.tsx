@@ -294,7 +294,7 @@ export default function Sidebar({
       className="flex h-full w-[280px] flex-col border-r border-border glass-card"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <div className="flex items-center gap-2.5">
           {brandingLogoUrl ? (
             <img src={brandingLogoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />
