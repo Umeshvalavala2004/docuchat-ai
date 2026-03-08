@@ -137,14 +137,20 @@ serve(async (req) => {
       fullText = await fileData.text();
     } else if (fileType === "pdf" || fileType === "application/pdf") {
       const bytes = new Uint8Array(await fileData.arrayBuffer());
-      fullText = await extractTextFromPDFWithUnpdf(bytes);
+      const result = await extractTextFromPDFWithUnpdf(bytes);
+      if (result.quality === "good") {
+        fullText = result.text;
+      } else {
+        console.log("Native PDF extraction yielded poor results, trying Vision API...");
+        fullText = await extractTextWithVisionAPI(bytes, LOVABLE_API_KEY);
+      }
     } else {
       fullText = await fileData.text();
     }
 
     if (!fullText || fullText.trim().length < 10) {
       await supabase.from("documents").update({ status: "error" }).eq("id", documentId);
-      throw new Error("Could not extract text from document. The PDF may be scanned/image-based.");
+      throw new Error("Could not extract text from document. The PDF may be empty or corrupted.");
     }
 
     // Clean text
