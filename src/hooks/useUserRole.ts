@@ -16,11 +16,13 @@ export function useUserRole(userId: string | undefined) {
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .limit(1)
-        .single();
-      if (data?.role) {
-        setRole(data.role as UserRole);
+        .eq("user_id", userId);
+      if (data && data.length > 0) {
+        // Prioritize: admin > pro_user > free_user
+        const roles = data.map((d) => d.role as UserRole);
+        if (roles.includes("admin")) setRole("admin");
+        else if (roles.includes("pro_user")) setRole("pro_user");
+        else setRole(roles[0]);
       }
     } catch {
       // Default to free_user
