@@ -468,16 +468,7 @@ export default function Sidebar({
                                 </>
                               )}
                               {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  <Progress value={status.progress} className="h-0.5 flex-1" />
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, e); }}
-                                    className="p-0.5 rounded hover:bg-destructive/10 shrink-0"
-                                    title={t("delete")}
-                                  >
-                                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                                  </button>
-                                </div>
+                                <Progress value={status.progress} className="h-0.5 mt-1" />
                               )}
                               {doc.reference_tag && (
                                 <span className="text-[10px] text-primary font-mono">#{doc.reference_tag}</span>
@@ -486,6 +477,18 @@ export default function Sidebar({
                               {doc.is_favorite && <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500 shrink-0" />}
                             </div>
                           </button>
+                          {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && (
+                            <div className="flex items-center gap-1 px-2.5 pb-1.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, e); }}
+                                className="p-1 rounded-lg hover:bg-destructive/10 flex items-center gap-1"
+                                title={t("delete")}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                                <span className="text-[10px] text-destructive">Delete stuck document</span>
+                              </button>
+                            </div>
+                          )}
                           {doc.status === "ready" && renamingId !== doc.id && (
                             <div className="flex items-center gap-0.5 px-2.5 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
                               <button onClick={async (e) => { e.stopPropagation(); try { const newVal = await toggleDocumentPinned(doc.id, doc.is_pinned); setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, is_pinned: newVal } : d)); toast.success(newVal ? "Pinned" : "Unpinned"); } catch { toast.error("Failed"); } }} className="p-1 rounded-lg hover:bg-accent" title="Pin"><Pin className={`h-3 w-3 ${doc.is_pinned ? "text-primary" : "text-muted-foreground"}`} /></button>
