@@ -384,7 +384,7 @@ export default function ChatInterface({
                         </p>
                         <div className="grid gap-1.5">
                           {msg.sources.slice(0, 4).map((src, j) => (
-                            <ExpandableSource key={j} src={src} index={j} />
+                            <ExpandableSource key={j} src={src} index={j} onNavigate={onCitationClick} />
                           ))}
                         </div>
                       </div>
