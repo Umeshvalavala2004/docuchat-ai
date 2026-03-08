@@ -105,6 +105,8 @@ export default function Sidebar({
   userRole = "free_user",
   onUpgradeClick,
   onAdminClick,
+  profileName,
+  profilePicture,
 }: SidebarProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
