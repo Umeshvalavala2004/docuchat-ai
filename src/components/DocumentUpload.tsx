@@ -2,15 +2,16 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, X, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { uploadDocument } from "@/lib/api";
+import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
 
 interface DocumentUploadProps {
   userId: string;
   onDocumentUploaded: (doc: any) => void;
+  workspaceId?: string;
 }
 
-export default function DocumentUpload({ userId, onDocumentUploaded }: DocumentUploadProps) {
+export default function DocumentUpload({ userId, onDocumentUploaded, workspaceId }: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export default function DocumentUpload({ userId, onDocumentUploaded }: DocumentU
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) await handleFile(file);
-  }, [userId]);
+  }, [userId, workspaceId]);
 
   const handleFile = async (file: File) => {
     const maxSize = 20 * 1024 * 1024; // 20MB
@@ -37,9 +38,21 @@ export default function DocumentUpload({ userId, onDocumentUploaded }: DocumentU
       return;
     }
 
+    // Check for duplicate
+    try {
+      const existing = await checkDuplicateDocument(userId, file.name, workspaceId);
+      if (existing) {
+        toast.info(`"${file.name}" already exists in this workspace. Opening it now.`, { duration: 4000 });
+        onDocumentUploaded(existing);
+        return;
+      }
+    } catch (e) {
+      console.error("Duplicate check failed:", e);
+    }
+
     setUploading(true);
     try {
-      const doc = await uploadDocument(file, userId);
+      const doc = await uploadDocument(file, userId, workspaceId);
       setUploadedFile(file.name);
       onDocumentUploaded(doc);
       toast.success("Document uploaded! Processing will begin shortly.");
