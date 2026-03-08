@@ -291,7 +291,7 @@ export default function Sidebar({
       animate={{ width: 280, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex h-full w-[280px] flex-col border-r border-border bg-card"
+      className="flex h-full w-[280px] flex-col border-r border-border glass-card"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
