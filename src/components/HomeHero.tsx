@@ -65,7 +65,7 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
     }
     setUploading(true);
     try {
-      const doc = await uploadDocument(file, userId);
+      const doc = await uploadDocument(file, userId, workspaceId || undefined);
       setUploadedFile(file.name);
 
       if (activeTab === "chat") {
