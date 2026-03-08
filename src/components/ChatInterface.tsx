@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
