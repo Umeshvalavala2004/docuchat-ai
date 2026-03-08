@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.manage-api-keys]
 verify_jwt = false
+
+[functions.tool-chat]
+verify_jwt = false

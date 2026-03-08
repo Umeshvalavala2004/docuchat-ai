@@ -194,6 +194,8 @@ const Index = () => {
           onAdminClick={() => setView("admin")}
           onSettingsClick={() => setView("settings")}
           onSearchClick={() => setView("search")}
+          onToolsClick={() => setView("tools")}
+          onInsertPrompt={(prompt) => { setInjectedPrompt(prompt); if (view !== "chat") setView("upload"); }}
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
           usageInfo={usage}
