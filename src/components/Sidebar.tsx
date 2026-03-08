@@ -116,6 +116,8 @@ export default function Sidebar({
   const [chatsOpen, setChatsOpen] = useState(true);
   const [foldersOpen, setFoldersOpen] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(false);
+  const [quickQOpen, setQuickQOpen] = useState(false);
 
   const loadDocuments = async () => {
     try {
