@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
+import TextSelectionToolbar, { type TextAction } from "@/components/TextSelectionToolbar";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -21,6 +22,7 @@ interface PdfViewerProps {
   highlightPage?: number | null;
   highlightText?: string | null;
   inline?: boolean;
+  onTextAction?: (action: TextAction, text: string, pageNumber: number) => void;
 }
 
 export default function PdfViewer({
