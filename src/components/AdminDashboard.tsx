@@ -6,12 +6,16 @@ import {
   Users, FileText, MessageSquare, Crown, Ban,
   ArrowUpCircle, ArrowDownCircle, BarChart3, Eye,
   TrendingUp, Activity, Search as SearchIcon, Tag,
+  Palette, Save, Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart } from "recharts";
+import { useBranding } from "@/hooks/useBranding";
 
 interface ProRequest {
   id: string;
@@ -37,7 +41,7 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminTab = "overview" | "analytics" | "users" | "requests";
+type AdminTab = "overview" | "analytics" | "users" | "requests" | "branding";
 
 const CHART_COLORS = [
   "hsl(222, 80%, 55%)",
@@ -54,6 +58,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const { branding, updateBranding, refetch: refetchBranding } = useBranding();
+  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "" });
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandInitialized, setBrandInitialized] = useState(false);
 
   const [stats, setStats] = useState({
     totalUsers: 0, freeUsers: 0, proUsers: 0, adminUsers: 0,
@@ -140,6 +148,37 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   useEffect(() => { loadData(); }, []);
 
+  // Sync brand form when branding loads
+  useEffect(() => {
+    if (!brandInitialized && branding.appName) {
+      setBrandForm({
+        appName: branding.appName,
+        subtitle: branding.subtitle,
+        copyrightYear: branding.copyrightYear,
+        copyrightText: branding.copyrightText,
+        logoUrl: branding.logoUrl || "",
+      });
+      setBrandInitialized(true);
+    }
+  }, [branding, brandInitialized]);
+
+  const handleSaveBranding = async () => {
+    setBrandSaving(true);
+    try {
+      await updateBranding({
+        appName: brandForm.appName,
+        subtitle: brandForm.subtitle,
+        copyrightYear: brandForm.copyrightYear,
+        copyrightText: brandForm.copyrightText,
+        logoUrl: brandForm.logoUrl || null,
+      });
+      toast.success("Branding updated! Changes will appear across the app.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save branding");
+    }
+    setBrandSaving(false);
+  };
+
   const handleApprove = async (requestId: string) => {
     setProcessing(requestId);
     try {
@@ -172,6 +211,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "users", label: "Users", icon: Users },
     { id: "requests", label: "Requests", icon: Crown, badge: pendingCount },
+    { id: "branding", label: "Branding", icon: Palette },
   ];
 
   const roleDistribution = [
@@ -540,6 +580,100 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* ── BRANDING ── */}
+            {tab === "branding" && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 max-w-xl">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Branding & Identity</h3>
+                    <p className="text-xs text-muted-foreground">Customize how the app appears across all pages</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Application Name</Label>
+                      <Input
+                        value={brandForm.appName}
+                        onChange={(e) => setBrandForm({ ...brandForm, appName: e.target.value })}
+                        placeholder="Interface_IQ"
+                        className="h-10 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Subtitle</Label>
+                      <Input
+                        value={brandForm.subtitle}
+                        onChange={(e) => setBrandForm({ ...brandForm, subtitle: e.target.value })}
+                        placeholder="Powered by Interface_IQ"
+                        className="h-10 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Copyright Year</Label>
+                        <Input
+                          value={brandForm.copyrightYear}
+                          onChange={(e) => setBrandForm({ ...brandForm, copyrightYear: e.target.value })}
+                          placeholder="2026"
+                          className="h-10 rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Copyright Text</Label>
+                        <Input
+                          value={brandForm.copyrightText}
+                          onChange={(e) => setBrandForm({ ...brandForm, copyrightText: e.target.value })}
+                          placeholder="Interface_IQ. All rights reserved."
+                          className="h-10 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Logo Image URL</Label>
+                      <Input
+                        value={brandForm.logoUrl}
+                        onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })}
+                        placeholder="https://example.com/logo.png"
+                        className="h-10 rounded-xl"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Leave empty to use the default icon</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Preview</h3>
+                  <div className="rounded-lg border border-border bg-background p-4 space-y-4">
+                    <div className="flex items-center gap-2.5">
+                      {brandForm.logoUrl ? (
+                        <img src={brandForm.logoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
+                          <FileText className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground tracking-tight">{brandForm.appName || "Interface_IQ"}</span>
+                        <span className="text-[9px] text-muted-foreground leading-tight">{brandForm.subtitle || "Powered by Interface_IQ"}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-border pt-3 text-center">
+                      <p className="text-[10px] text-muted-foreground">© {brandForm.copyrightYear || "2026"} {brandForm.copyrightText || "Interface_IQ. All rights reserved."}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveBranding} disabled={brandSaving} className="rounded-xl gradient-primary border-0 gap-2">
+                  {brandSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Branding
+                </Button>
+              </motion.div>
             )}
           </div>
         </ScrollArea>

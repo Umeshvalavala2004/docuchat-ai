@@ -7,6 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useModelPreference } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
+import { useBranding } from "@/hooks/useBranding";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
@@ -35,6 +36,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const { model: activeModel, updateModel } = useModelPreference(user?.id || null);
   const { usage } = useDailyUsage(user?.id || null);
+  const { branding, copyright } = useBranding();
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -81,7 +83,7 @@ const Index = () => {
             <FileText className="h-7 w-7 text-primary-foreground animate-pulse" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <p className="text-sm font-semibold text-foreground">Interface_IQ</p>
+            <p className="text-sm font-semibold text-foreground">{branding.appName}</p>
             <p className="text-xs text-muted-foreground">Loading your workspace...</p>
           </div>
           <div className="flex gap-1">
@@ -194,6 +196,9 @@ const Index = () => {
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
           usageInfo={usage}
+          brandingAppName={branding.appName}
+          brandingSubtitle={branding.subtitle}
+          brandingLogoUrl={branding.logoUrl}
         />
       )}
 
@@ -443,7 +448,7 @@ const Index = () => {
 
         {/* Footer */}
         <div className="border-t border-border px-4 py-1.5 text-center">
-          <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+          <p className="text-[10px] text-muted-foreground">{copyright}</p>
         </div>
       </div>
     </div>

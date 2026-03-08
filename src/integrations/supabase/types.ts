@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      branding_settings: {
+        Row: {
+          app_name: string
+          copyright_text: string
+          copyright_year: string
+          id: string
+          logo_url: string | null
+          subtitle: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          app_name?: string
+          copyright_text?: string
+          copyright_year?: string
+          id?: string
+          logo_url?: string | null
+          subtitle?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          app_name?: string
+          copyright_text?: string
+          copyright_year?: string
+          id?: string
+          logo_url?: string | null
+          subtitle?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           created_at: string

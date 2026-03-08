@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { UserProfile } from "@/hooks/useProfile";
 import ModelSettings from "@/components/ModelSettings";
 import type { ModelConfig } from "@/hooks/useModelPreference";
+import { useBranding } from "@/hooks/useBranding";
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -23,6 +24,7 @@ type Tab = "general" | "ai-models" | "chat" | "documents" | "account" | "about";
 
 export default function SettingsPage({ onBack, userId, profile, currentModel, onModelChange }: SettingsPageProps) {
   const [tab, setTab] = useState<Tab>("general");
+  const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
@@ -134,7 +136,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">Theme</h3>
-                  <p className="text-xs text-muted-foreground mb-4">Choose how Interface_IQ looks to you</p>
+                  <p className="text-xs text-muted-foreground mb-4">Choose how {branding.appName} looks to you</p>
                   <div className="grid grid-cols-3 gap-3">
                     {themeOptions.map((t) => (
                       <button
@@ -292,8 +294,8 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                       <FileText className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-foreground">Interface_IQ</h3>
-                      <p className="text-xs text-muted-foreground">Powered by Interface_IQ</p>
+                      <h3 className="text-lg font-bold text-foreground">{branding.appName}</h3>
+                      <p className="text-xs text-muted-foreground">{branding.subtitle}</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
@@ -305,7 +307,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                   <h3 className="text-sm font-semibold text-foreground mb-3">Platform Details</h3>
                   <div className="space-y-2">
                     {[
-                      { label: "Project Name", value: "Interface_IQ" },
+                      { label: "Project Name", value: branding.appName },
                       { label: "Version", value: "1.0.0" },
                       { label: "Platform", value: "AI Document Intelligence" },
                     ].map((item) => (
@@ -318,7 +320,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                 </div>
 
                 <div className="text-center py-4">
-                  <p className="text-xs text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+                  <p className="text-xs text-muted-foreground">{copyright}</p>
                 </div>
               </motion.div>
             )}
