@@ -194,22 +194,6 @@ export default function HomeHero({ userId, onDocumentUploaded, brandingAppName }
         </div>
       </motion.div>
 
-      {/* Trust badges */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-10 opacity-50"
-      >
-        {["Harvard University", "Cambridge", "Oxford", "Stanford"].map((name) => (
-          <div key={name} className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-[10px] font-bold text-muted-foreground">{name.charAt(0)}</span>
-            </div>
-            <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">{name}</span>
-          </div>
-        ))}
-      </motion.div>
     </div>
   );
 }
