@@ -86,7 +86,7 @@ const Index = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-1 flex-col items-center justify-center p-8"
               >
-                <div className="w-full max-w-lg">
+                <div className="w-full max-w-lg relative">
                 <div className="absolute top-4 right-4">
                   <DarkModeToggle />
                 </div>
