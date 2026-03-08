@@ -68,6 +68,7 @@ export default function Sidebar({
   selectedDocId,
   onSelectDocument,
   onSelectChatSession,
+  onStartMultiDocChat,
   onNewUpload,
   onSignOut,
   collapsed,
@@ -80,6 +81,8 @@ export default function Sidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
 
   const loadDocuments = async () => {
     try {
