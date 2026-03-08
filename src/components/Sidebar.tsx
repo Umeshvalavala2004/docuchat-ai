@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   FileText, MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight,
   Loader2, Clock, CheckCircle2, AlertCircle, Pencil, Check, X,
@@ -45,21 +46,13 @@ interface SidebarProps {
   brandingLogoUrl?: string | null;
 }
 
-const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
-  pending: { icon: <Clock className="h-3.5 w-3.5 text-warning" />, label: "Uploading", progress: 15 },
-  processing: { icon: <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />, label: "Processing", progress: 45 },
-  indexing: { icon: <Database className="h-3.5 w-3.5 text-primary animate-pulse" />, label: "Indexing", progress: 75 },
-  ready: { icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" />, label: "Ready", progress: 100 },
-  error: { icon: <AlertCircle className="h-3.5 w-3.5 text-destructive" />, label: "Error", progress: 0 },
-};
-
 const sidebarTools = [
-  { id: "diffchecker-pdf", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
-  { id: "diffchecker-text", label: "Text Diff Checker", icon: FileText, color: "text-blue-500" },
-  { id: "json-formatter", label: "JSON Formatter", icon: Braces, color: "text-emerald-500" },
-  { id: "stackedit", label: "Markdown Editor", icon: PenLine, color: "text-violet-500" },
-  { id: "beautifier", label: "Code Beautifier", icon: Code2, color: "text-cyan-500" },
-  { id: "regex101", label: "Regex Tester", icon: Regex, color: "text-pink-500" },
+  { id: "diffchecker-pdf", labelKey: "document_compare", icon: GitCompare, color: "text-orange-500" },
+  { id: "diffchecker-text", labelKey: "text_diff_checker", icon: FileText, color: "text-blue-500" },
+  { id: "json-formatter", labelKey: "json_formatter", icon: Braces, color: "text-emerald-500" },
+  { id: "stackedit", labelKey: "markdown_editor", icon: PenLine, color: "text-violet-500" },
+  { id: "beautifier", labelKey: "code_beautifier", icon: Code2, color: "text-cyan-500" },
+  { id: "regex101", labelKey: "regex_tester", icon: Regex, color: "text-pink-500" },
 ];
 
 function getDocIcon(name: string) {
@@ -101,6 +94,7 @@ export default function Sidebar({
   brandingSubtitle = "Powered by Interface_IQ",
   brandingLogoUrl,
 }: SidebarProps) {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,8 +147,8 @@ export default function Sidebar({
     try {
       await deleteDocument(docId);
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
-      toast.success("Document deleted");
-    } catch { toast.error("Failed to delete document"); }
+      toast.success(t("document_deleted"));
+    } catch { toast.error(t("failed_delete_document")); }
   };
 
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
@@ -162,8 +156,8 @@ export default function Sidebar({
     try {
       await deleteChatSession(sessionId);
       setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      toast.success("Chat deleted");
-    } catch { toast.error("Failed to delete chat"); }
+      toast.success(t("chat_deleted"));
+    } catch { toast.error(t("failed_delete_chat")); }
   };
 
   const handleRename = async (docId: string) => {
@@ -171,8 +165,8 @@ export default function Sidebar({
     try {
       await renameDocument(docId, renameValue.trim());
       setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, name: renameValue.trim() } : d)));
-      toast.success("Document renamed");
-    } catch { toast.error("Failed to rename"); }
+      toast.success(t("document_renamed"));
+    } catch { toast.error(t("failed_rename")); }
     setRenamingId(null);
   };
 
@@ -181,12 +175,12 @@ export default function Sidebar({
     setFolders((prev) => [...prev, { id: crypto.randomUUID(), name: newFolderName.trim(), docIds: [], open: true }]);
     setNewFolderName("");
     setCreatingFolder(false);
-    toast.success("Folder created");
+    toast.success(t("folder_created"));
   };
 
   const handleDeleteFolder = (folderId: string) => {
     setFolders((prev) => prev.filter((f) => f.id !== folderId));
-    toast.success("Folder deleted");
+    toast.success(t("folder_deleted"));
   };
 
   const toggleFolderOpen = (folderId: string) => {
@@ -198,6 +192,14 @@ export default function Sidebar({
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.documents?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
+    pending: { icon: <Clock className="h-3.5 w-3.5 text-warning" />, label: t("uploading"), progress: 15 },
+    processing: { icon: <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />, label: t("processing"), progress: 45 },
+    indexing: { icon: <Database className="h-3.5 w-3.5 text-primary animate-pulse" />, label: t("indexing"), progress: 75 },
+    ready: { icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" />, label: t("ready"), progress: 100 },
+    error: { icon: <AlertCircle className="h-3.5 w-3.5 text-destructive" />, label: t("error"), progress: 0 },
+  };
 
   const initials = (user.email || "U").split("@")[0].slice(0, 2).toUpperCase();
 
@@ -216,7 +218,7 @@ export default function Sidebar({
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Expand sidebar</TooltipContent>
+            <TooltipContent side="right">{t("expand_sidebar")}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -225,7 +227,7 @@ export default function Sidebar({
                 <Plus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">New Chat</TooltipContent>
+            <TooltipContent side="right">{t("new_chat")}</TooltipContent>
           </Tooltip>
 
           <div className="h-px w-6 bg-border my-2" />
@@ -236,7 +238,7 @@ export default function Sidebar({
                 <MessageSquare className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Chats</TooltipContent>
+            <TooltipContent side="right">{t("chats")}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -245,7 +247,7 @@ export default function Sidebar({
                 <Folder className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Folders</TooltipContent>
+            <TooltipContent side="right">{t("folders")}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -254,7 +256,7 @@ export default function Sidebar({
                 <Sparkles className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Tools</TooltipContent>
+            <TooltipContent side="right">{t("tools")}</TooltipContent>
           </Tooltip>
 
           <div className="mt-auto flex flex-col items-center gap-1.5">
@@ -264,7 +266,7 @@ export default function Sidebar({
                   <Settings className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
+              <TooltipContent side="right">{t("settings")}</TooltipContent>
             </Tooltip>
             <DarkModeToggle />
             <Tooltip>
@@ -321,7 +323,7 @@ export default function Sidebar({
           className="w-full justify-center gap-2 rounded-xl h-10 text-sm font-medium gradient-primary hover:opacity-90 shadow-sm border-0"
         >
           <Plus className="h-4 w-4" />
-          New Chat
+          {t("new_chat")}
         </Button>
       </div>
 
@@ -332,7 +334,7 @@ export default function Sidebar({
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
+            placeholder={t("search")}
             className="h-8 pl-8 text-xs rounded-lg bg-accent/50 border-0 focus-visible:ring-1"
           />
         </div>
@@ -348,7 +350,7 @@ export default function Sidebar({
             }`}
           >
             <Layers className="h-3 w-3" />
-            {multiSelectMode ? "Cancel multi-select" : "Select multiple"}
+            {multiSelectMode ? t("cancel_multi_select") : t("select_multiple")}
           </button>
         </div>
       )}
@@ -357,7 +359,7 @@ export default function Sidebar({
       <ScrollArea className="flex-1">
         <div className="px-2 py-1 space-y-0.5">
           {/* CHATS */}
-          <SectionHeader label="Chats" icon={<MessageSquare className="h-3.5 w-3.5" />} count={filteredDocs.length} open={chatsOpen} onToggle={() => setChatsOpen(!chatsOpen)} />
+          <SectionHeader label={t("chats")} icon={<MessageSquare className="h-3.5 w-3.5" />} count={filteredDocs.length} open={chatsOpen} onToggle={() => setChatsOpen(!chatsOpen)} />
           <AnimatePresence initial={false}>
             {chatsOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
@@ -372,7 +374,7 @@ export default function Sidebar({
                   </div>
                 ) : filteredDocs.length === 0 ? (
                   <div className="px-3 py-4 text-center">
-                    <p className="text-[11px] text-muted-foreground">{searchQuery ? "No matching documents" : "No documents yet"}</p>
+                    <p className="text-[11px] text-muted-foreground">{searchQuery ? t("no_matching_documents") : t("no_documents")}</p>
                   </div>
                 ) : (
                   <div className="space-y-0.5 py-0.5 px-1">
@@ -417,8 +419,8 @@ export default function Sidebar({
                           </button>
                           {doc.status === "ready" && renamingId !== doc.id && (
                             <div className="flex items-center gap-0.5 px-2.5 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title="Rename"><Pencil className="h-3 w-3 text-muted-foreground" /></button>
-                              <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title="Delete"><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
+                              <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title={t("rename")}><Pencil className="h-3 w-3 text-muted-foreground" /></button>
+                              <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title={t("delete")}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                             </div>
                           )}
                         </motion.div>
@@ -430,7 +432,7 @@ export default function Sidebar({
                 {/* Recent chat sessions */}
                 {filteredSessions.length > 0 && (
                   <div className="px-1 pt-1 pb-1">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1.5">Recent Chats</p>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1.5">{t("recent_chats")}</p>
                     <div className="space-y-0.5">
                       {filteredSessions.slice(0, 10).map((session) => (
                         <motion.div key={session.id} layout className="group flex items-center rounded-xl hover:bg-accent/70 transition-all">
@@ -452,8 +454,8 @@ export default function Sidebar({
           </AnimatePresence>
 
           {/* FOLDERS */}
-          <SectionHeader label="Folders" icon={<Folder className="h-3.5 w-3.5" />} count={folders.length} open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)}
-            action={<button onClick={(e) => { e.stopPropagation(); setCreatingFolder(true); setFoldersOpen(true); }} className="p-0.5 rounded hover:bg-accent transition-colors" title="New Folder"><FolderPlus className="h-3.5 w-3.5 text-muted-foreground" /></button>}
+          <SectionHeader label={t("folders")} icon={<Folder className="h-3.5 w-3.5" />} count={folders.length} open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)}
+            action={<button onClick={(e) => { e.stopPropagation(); setCreatingFolder(true); setFoldersOpen(true); }} className="p-0.5 rounded hover:bg-accent transition-colors" title={t("folders")}><FolderPlus className="h-3.5 w-3.5 text-muted-foreground" /></button>}
           />
           <AnimatePresence initial={false}>
             {foldersOpen && (
@@ -462,13 +464,13 @@ export default function Sidebar({
                   {creatingFolder && (
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5">
                       <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setCreatingFolder(false); }} placeholder="Folder name" className="h-6 text-xs px-1.5 flex-1" autoFocus />
+                      <Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setCreatingFolder(false); }} placeholder={t("folder_name")} className="h-6 text-xs px-1.5 flex-1" autoFocus />
                       <button onClick={handleCreateFolder}><Check className="h-3 w-3 text-success" /></button>
                       <button onClick={() => setCreatingFolder(false)}><X className="h-3 w-3 text-muted-foreground" /></button>
                     </div>
                   )}
                   {folders.length === 0 && !creatingFolder ? (
-                    <div className="px-3 py-3 text-center"><p className="text-[11px] text-muted-foreground">No folders yet</p></div>
+                    <div className="px-3 py-3 text-center"><p className="text-[11px] text-muted-foreground">{t("no_folders")}</p></div>
                   ) : (
                     folders.map((folder) => (
                       <div key={folder.id}>
@@ -496,17 +498,17 @@ export default function Sidebar({
           </AnimatePresence>
 
           {/* TOOLS */}
-          <SectionHeader label="Tools" icon={<Sparkles className="h-3.5 w-3.5" />} open={toolsOpen} onToggle={() => setToolsOpen(!toolsOpen)} />
+          <SectionHeader label={t("tools")} icon={<Sparkles className="h-3.5 w-3.5" />} open={toolsOpen} onToggle={() => setToolsOpen(!toolsOpen)} />
           <AnimatePresence initial={false}>
             {toolsOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                 <div className="space-y-0.5 py-0.5 px-1">
                   <button onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
-                    <Sparkles className="h-3.5 w-3.5" /> Open All Tools
+                    <Sparkles className="h-3.5 w-3.5" /> {t("open_all_tools")}
                   </button>
                   {sidebarTools.map((tool) => (
                     <button key={tool.id} onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
-                      <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{tool.label}
+                      <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{t(tool.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -515,7 +517,7 @@ export default function Sidebar({
           </AnimatePresence>
 
           {/* IMPORTANT LINKS */}
-          <SectionHeader label="Important Links" icon={<Link2 className="h-3.5 w-3.5" />} open={linksOpen} onToggle={() => setLinksOpen(!linksOpen)} />
+          <SectionHeader label={t("important_links")} icon={<Link2 className="h-3.5 w-3.5" />} open={linksOpen} onToggle={() => setLinksOpen(!linksOpen)} />
           <AnimatePresence initial={false}>
             {linksOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
@@ -525,7 +527,7 @@ export default function Sidebar({
           </AnimatePresence>
 
           {/* QUICK QUESTIONS */}
-          <SectionHeader label="Quick Questions" icon={<Zap className="h-3.5 w-3.5" />} open={quickQOpen} onToggle={() => setQuickQOpen(!quickQOpen)} />
+          <SectionHeader label={t("quick_questions")} icon={<Zap className="h-3.5 w-3.5" />} open={quickQOpen} onToggle={() => setQuickQOpen(!quickQOpen)} />
           <AnimatePresence initial={false}>
             {quickQOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
@@ -540,7 +542,7 @@ export default function Sidebar({
       {multiSelectMode && selectedDocIds.size >= 2 && (
         <div className="border-t border-border px-3 py-2">
           <Button onClick={() => { const ids = Array.from(selectedDocIds); const names = ids.map(id => documents.find(d => d.id === id)?.name || "Document"); onStartMultiDocChat(ids, names); setMultiSelectMode(false); setSelectedDocIds(new Set()); }} className="w-full gap-2 rounded-xl h-9 text-xs gradient-primary border-0" size="sm">
-            <Layers className="h-3.5 w-3.5" />Chat with {selectedDocIds.size} documents
+            <Layers className="h-3.5 w-3.5" />{t("chat_with_docs", { count: selectedDocIds.size })}
           </Button>
         </div>
       )}
@@ -549,18 +551,18 @@ export default function Sidebar({
       <div className="border-t border-border p-3 space-y-2">
         {userRole === "admin" && onAdminClick && (
           <button onClick={onAdminClick} className="flex items-center gap-2 w-full rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-            <Shield className="h-3.5 w-3.5" /><span className="flex-1 text-left">Admin Dashboard</span><ChevronRight className="h-3 w-3" />
+            <Shield className="h-3.5 w-3.5" /><span className="flex-1 text-left">{t("admin_dashboard")}</span><ChevronRight className="h-3 w-3" />
           </button>
         )}
         {userRole === "free_user" && (
           <div className="space-y-1.5">
             <button onClick={onUpgradeClick} className="flex items-center gap-2 w-full rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors">
-              <Crown className="h-3.5 w-3.5" /><span className="flex-1 text-left">Upgrade to Pro</span><ChevronRight className="h-3 w-3" />
+              <Crown className="h-3.5 w-3.5" /><span className="flex-1 text-left">{t("upgrade_to_pro")}</span><ChevronRight className="h-3 w-3" />
             </button>
             {usageInfo && (
               <div className="rounded-lg bg-accent/50 px-3 py-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground">Daily questions</span>
+                  <span className="text-[10px] text-muted-foreground">{t("daily_questions")}</span>
                   <span className="text-[10px] font-medium text-foreground">{usageInfo.questionsAsked} / {usageInfo.maxQuestions}</span>
                 </div>
                 <Progress value={(usageInfo.questionsAsked / usageInfo.maxQuestions) * 100} className="h-1.5" />
@@ -570,7 +572,7 @@ export default function Sidebar({
         )}
         {userRole === "pro_user" && (
           <div className="flex items-center gap-2 w-full rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <Crown className="h-3.5 w-3.5" /><span>Pro Plan</span><span className="ml-auto text-[10px] opacity-70">Unlimited</span>
+            <Crown className="h-3.5 w-3.5" /><span>{t("pro_plan")}</span><span className="ml-auto text-[10px] opacity-70">{t("unlimited")}</span>
           </div>
         )}
 
@@ -582,10 +584,10 @@ export default function Sidebar({
           )}
           <div className="flex-1 min-w-0">
             <p className="truncate text-xs font-medium text-foreground">{profileName || user.email?.split("@")[0]}</p>
-            <p className="truncate text-[10px] text-muted-foreground capitalize">{userRole === "admin" ? "Administrator" : userRole === "pro_user" ? "Pro Plan" : "Free Plan"}</p>
+            <p className="truncate text-[10px] text-muted-foreground capitalize">{userRole === "admin" ? t("administrator") : userRole === "pro_user" ? t("pro_plan") : t("free_plan")}</p>
           </div>
-          <button onClick={onSettingsClick} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Settings"><Settings className="h-3.5 w-3.5" /></button>
-          <button onClick={onSignOut} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Sign out"><LogOut className="h-3.5 w-3.5" /></button>
+          <button onClick={onSettingsClick} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title={t("settings")}><Settings className="h-3.5 w-3.5" /></button>
+          <button onClick={onSignOut} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title={t("sign_out")}><LogOut className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     </motion.div>

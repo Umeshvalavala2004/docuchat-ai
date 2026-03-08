@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -18,6 +19,7 @@ import SettingsPage from "@/components/SettingsPage";
 import EnterpriseSearch from "@/components/EnterpriseSearch";
 import ToolsDashboard from "@/components/ToolsDashboard";
 import NotificationBell from "@/components/NotificationBell";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
@@ -30,6 +32,7 @@ import type { TextAction } from "@/components/TextSelectionToolbar";
 type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools";
 
 const Index = () => {
+  const { t } = useTranslation();
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const { role, isAdmin, loading: roleLoading, refetch: refetchRole } = useUserRole(user?.id);
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(user?.id);
@@ -66,10 +69,10 @@ const Index = () => {
     try {
       const { error } = await supabase.rpc("request_pro_upgrade");
       if (error) throw error;
-      toast.success("Pro upgrade requested! An admin will review your request.");
+      toast.success(t("pro_upgrade_requested"));
     } catch (e: any) {
       if (e.message?.includes("already have a pending")) {
-        toast.info("You already have a pending Pro request.");
+        toast.info(t("pending_pro_request"));
       } else {
         toast.error(e.message || "Failed to request upgrade");
       }
@@ -85,7 +88,7 @@ const Index = () => {
           </div>
           <div className="flex flex-col items-center gap-1">
             <p className="text-sm font-semibold text-foreground">{branding.appName}</p>
-            <p className="text-xs text-muted-foreground">Loading your workspace...</p>
+            <p className="text-xs text-muted-foreground">{t("loading_workspace")}</p>
           </div>
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -232,7 +235,7 @@ const Index = () => {
                   )}
                 </div>
                 <span className="font-medium text-foreground truncate max-w-[200px]">
-                  {selectedDocIds.length > 1 ? `${selectedDocIds.length} Documents` : selectedDocName}
+                  {selectedDocIds.length > 1 ? `${selectedDocIds.length} ${t("documents")}` : selectedDocName}
                 </span>
               </div>
             )}
@@ -241,7 +244,7 @@ const Index = () => {
                 <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
                   <FileUp className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="font-medium text-foreground">Upload Document</span>
+                <span className="font-medium text-foreground">{t("upload_document")}</span>
               </div>
             )}
             {view === "admin" && (
@@ -249,7 +252,7 @@ const Index = () => {
                 <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="font-medium text-foreground">Admin Dashboard</span>
+                <span className="font-medium text-foreground">{t("admin_dashboard")}</span>
               </div>
             )}
             {view === "settings" && (
@@ -257,7 +260,7 @@ const Index = () => {
                 <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="font-medium text-foreground">Settings</span>
+                <span className="font-medium text-foreground">{t("settings")}</span>
               </div>
             )}
             {view === "search" && (
@@ -265,7 +268,7 @@ const Index = () => {
                 <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
                   <Search className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="font-medium text-foreground">Enterprise Search</span>
+                <span className="font-medium text-foreground">{t("enterprise_search")}</span>
               </div>
             )}
             {view === "tools" && (
@@ -273,7 +276,7 @@ const Index = () => {
                 <div className="h-6 w-6 rounded-lg gradient-primary flex items-center justify-center">
                   <Sparkles className="h-3 w-3 text-primary-foreground" />
                 </div>
-                <span className="font-medium text-foreground">AI Tools</span>
+                <span className="font-medium text-foreground">{t("ai_tools")}</span>
               </div>
             )}
           </div>
@@ -300,7 +303,9 @@ const Index = () => {
             </div>
           )}
 
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title="Enterprise Search">
+          <LanguageSwitcher />
+
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title={t("enterprise_search")}>
             <Search className="h-4 w-4" />
           </Button>
 
@@ -353,10 +358,10 @@ const Index = () => {
                       <Upload className="h-9 w-9 text-primary-foreground" />
                     </motion.div>
                     <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                      Upload a document
+                      {t("upload_title")}
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-                      Upload a PDF, DOCX, or TXT file and start an AI-powered conversation
+                      {t("upload_subtitle")}
                     </p>
                   </div>
                   <DocumentUpload
@@ -374,7 +379,6 @@ const Index = () => {
                 className="flex flex-1 overflow-hidden"
               >
                 {isMobile ? (
-                  // Mobile: toggle between panels
                   mobilePanel === "pdf" ? (
                     <div className="flex-1 min-w-0">
                       <PdfViewer
@@ -404,7 +408,6 @@ const Index = () => {
                     </div>
                   )
                 ) : (
-                  // Desktop: resizable split
                   <ResizablePanelGroup direction="horizontal" className="flex-1">
                     <ResizablePanel defaultSize={55} minSize={30}>
                       <PdfViewer
