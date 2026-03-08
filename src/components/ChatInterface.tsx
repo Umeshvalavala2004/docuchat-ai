@@ -247,7 +247,7 @@ export default function ChatInterface({
     } else {
       // Cloud model via edge function
       await streamChat({
-        message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
+        message: effectiveMessage, documentId: effectiveDocId, documentIds: effectiveDocIds, chatSessionId: currentSessionId, history: messages,
         modelId: modelConfig?.model_id,
         onSources: (s) => { sources = s; setActiveSources(s); },
         onMetrics: (m) => { setActiveMetrics(m); },
