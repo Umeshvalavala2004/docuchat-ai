@@ -77,6 +77,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "documents", label: "Documents", icon: FileText },
     { id: "account", label: "Account", icon: User },
+    { id: "about", label: "About", icon: Info },
   ];
 
   const themeOptions = [
