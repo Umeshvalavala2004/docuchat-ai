@@ -342,6 +342,13 @@ export default function Sidebar({
                           className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left text-sm"
                           disabled={doc.status !== "ready"}
                         >
+                          {multiSelectMode && doc.status === "ready" && (
+                            <Checkbox
+                              checked={selectedDocIds.has(doc.id)}
+                              className="mt-0.5 shrink-0 pointer-events-none"
+                              tabIndex={-1}
+                            />
+                          )}
                           {status.icon}
                           <div className="flex-1 min-w-0">
                             {renamingId === doc.id ? (
