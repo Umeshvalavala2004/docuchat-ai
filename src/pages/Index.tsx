@@ -16,9 +16,10 @@ import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
 import EnterpriseSearch from "@/components/EnterpriseSearch";
+import ToolsDashboard from "@/components/ToolsDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings" | "search";
+type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools";
 
 const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
