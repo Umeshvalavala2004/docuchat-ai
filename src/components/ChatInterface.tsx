@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
@@ -11,6 +11,7 @@ interface ChatInterfaceProps {
   documentName: string;
   userId: string;
   chatSessionId?: string;
+  initialMessages?: ChatMessage[];
   onChatSessionCreated?: (id: string) => void;
 }
 
@@ -19,9 +20,10 @@ export default function ChatInterface({
   documentName,
   userId,
   chatSessionId,
+  initialMessages,
   onChatSessionCreated,
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeSources, setActiveSources] = useState<Source[]>([]);
@@ -43,7 +45,6 @@ export default function ChatInterface({
     const userMsg: ChatMessage = { role: "user", content: userMessage };
     setMessages((prev) => [...prev, userMsg]);
 
-    // Create chat session if needed
     let currentSessionId = sessionId;
     if (!currentSessionId) {
       try {
@@ -56,7 +57,6 @@ export default function ChatInterface({
       }
     }
 
-    // Save user message
     if (currentSessionId) {
       saveMessage(currentSessionId, "user", userMessage);
     }
@@ -87,11 +87,9 @@ export default function ChatInterface({
       },
       onDone: () => {
         setIsLoading(false);
-        // Save assistant message
         if (currentSessionId) {
           saveMessage(currentSessionId, "assistant", assistantContent, sources);
         }
-        // Update sources on final message
         setMessages((prev) =>
           prev.map((m, i) =>
             i === prev.length - 1 && m.role === "assistant" ? { ...m, sources } : m
@@ -125,22 +123,28 @@ export default function ChatInterface({
             animate={{ opacity: 1, y: 0 }}
             className="flex h-full flex-col items-center justify-center text-center"
           >
-            <div className="rounded-2xl bg-primary/10 p-4 mb-4">
-              <Sparkles className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 p-5 mb-5 shadow-inner"
+            >
+              <Sparkles className="h-10 w-10 text-primary" />
+            </motion.div>
+            <h3 className="text-xl font-bold text-foreground">
               Chat with {documentName}
             </h3>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Ask any question about your document. I'll find the answer and show you exactly where it came from.
+            <p className="mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">
+              Ask any question about your document. I'll find the answer and cite the exact source.
             </p>
-            <div className="mt-6 grid gap-2">
+            <div className="mt-6 grid gap-2 w-full max-w-md">
               {["What is this document about?", "Summarize the key points", "What are the main findings?"].map((q) => (
                 <button
                   key={q}
                   onClick={() => { setInput(q); textareaRef.current?.focus(); }}
-                  className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground hover:border-primary/30 transition-all text-left"
                 >
+                  <span className="text-primary/60 mr-2">→</span>
                   {q}
                 </button>
               ))}
@@ -148,7 +152,7 @@ export default function ChatInterface({
           </motion.div>
         )}
 
-        <div className="mx-auto max-w-3xl space-y-6">
+        <div className="mx-auto max-w-3xl space-y-4">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
               <motion.div
@@ -159,15 +163,15 @@ export default function ChatInterface({
                 className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-sm">
+                    <Bot className="h-4 w-4 text-primary-foreground" />
                   </div>
                 )}
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/80 border border-border/50"
                   }`}
                 >
                   {msg.role === "assistant" ? (
@@ -180,14 +184,16 @@ export default function ChatInterface({
 
                   {/* Sources */}
                   {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3 border-t border-border/50 pt-3">
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">Sources</p>
+                    <div className="mt-3 border-t border-border/30 pt-3">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Sources
+                      </p>
                       <div className="grid gap-1.5">
                         {msg.sources.slice(0, 4).map((src, j) => (
                           <button
                             key={j}
                             onClick={() => setActiveSources([src])}
-                            className="flex items-start gap-2 rounded-lg bg-background/60 p-2 text-left text-xs hover:bg-background transition-colors"
+                            className="flex items-start gap-2 rounded-lg bg-background/80 border border-border/30 p-2 text-left text-xs hover:bg-background hover:border-primary/30 transition-all"
                           >
                             <FileText className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                             <span className="line-clamp-2 text-muted-foreground">
@@ -200,8 +206,8 @@ export default function ChatInterface({
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground/10">
-                    <span className="text-xs font-medium text-foreground">You</span>
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-foreground/10 to-foreground/5">
+                    <User className="h-4 w-4 text-foreground/70" />
                   </div>
                 )}
               </motion.div>
@@ -214,13 +220,13 @@ export default function ChatInterface({
               animate={{ opacity: 1 }}
               className="flex items-center gap-3"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-sm">
+                <Bot className="h-4 w-4 text-primary-foreground" />
               </div>
-              <div className="flex gap-1">
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-pulse-soft" />
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-pulse-soft [animation-delay:0.2s]" />
-                <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-pulse-soft [animation-delay:0.4s]" />
+              <div className="flex gap-1.5 items-center bg-muted/80 rounded-2xl px-4 py-3 border border-border/50">
+                <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" />
+                <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft [animation-delay:0.2s]" />
+                <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft [animation-delay:0.4s]" />
               </div>
             </motion.div>
           )}
@@ -229,9 +235,9 @@ export default function ChatInterface({
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-background p-4">
+      <div className="border-t border-border bg-gradient-to-t from-background to-background/80 p-4">
         <div className="mx-auto max-w-3xl">
-          <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+          <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
             <Textarea
               ref={textareaRef}
               value={input}
@@ -245,7 +251,7 @@ export default function ChatInterface({
               size="icon"
               onClick={send}
               disabled={!input.trim() || isLoading}
-              className="h-9 w-9 shrink-0 rounded-xl"
+              className="h-9 w-9 shrink-0 rounded-xl shadow-sm"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -254,7 +260,7 @@ export default function ChatInterface({
               )}
             </Button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          <p className="mt-2 text-center text-[10px] text-muted-foreground/60">
             Answers are generated from your document content only
           </p>
         </div>
