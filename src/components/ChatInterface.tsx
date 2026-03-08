@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
@@ -12,6 +12,8 @@ import type { ModelConfig } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { Progress } from "@/components/ui/progress";
 import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from "@/components/DocumentMentionDropdown";
+import ShareDialog from "@/components/ShareDialog";
+import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ChatInterfaceProps {
@@ -135,6 +137,10 @@ export default function ChatInterface({
   const [mentionQuery, setMentionQuery] = useState("");
   const [allDocuments, setAllDocuments] = useState<MentionableDocument[]>([]);
   const [mentionedDocs, setMentionedDocs] = useState<MentionableDocument[]>([]);
+
+  // Sharing hooks
+  const docShareHook = useDocumentShares(documentId);
+  const chatShareHook = useChatSessionShares(sessionId || null);
 
   // Load user documents for mention system
   useEffect(() => {
@@ -304,6 +310,37 @@ export default function ChatInterface({
             {tokenCount} tokens
           </span>
         )}
+        <div className="ml-auto flex items-center gap-1">
+          <ShareDialog
+            type="document"
+            name={documentName}
+            shares={docShareHook.shares}
+            loading={docShareHook.loading}
+            onAdd={(email, perm) => docShareHook.addShare(email, perm, userId)}
+            onRemove={docShareHook.removeShare}
+            onUpdatePermission={docShareHook.updatePermission}
+            trigger={
+              <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                <Share2 className="h-3 w-3" /> Share
+              </button>
+            }
+          />
+          {sessionId && (
+            <ShareDialog
+              type="chat"
+              name={documentName + " - Chat"}
+              shares={chatShareHook.shares}
+              loading={chatShareHook.loading}
+              onAdd={(email, perm) => chatShareHook.addShare(email, perm, userId)}
+              onRemove={chatShareHook.removeShare}
+              trigger={
+                <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <Share2 className="h-3 w-3" /> Share Chat
+                </button>
+              }
+            />
+          )}
+        </div>
       </div>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6">

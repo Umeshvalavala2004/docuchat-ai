@@ -7,7 +7,7 @@ import {
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
   ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
   Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench, Shield,
-  Star, Pin, Hash,
+  Star, Pin, Hash, Share2, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
 import QuickQuestions from "@/components/QuickQuestions";
+import ShareDialog from "@/components/ShareDialog";
+import { useDocumentShares, useSharedWithMe } from "@/hooks/useSharing";
 import type { User } from "@supabase/supabase-js";
 
 interface SidebarProps {
@@ -113,6 +115,10 @@ export default function Sidebar({
   const [toolsOpen, setToolsOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
   const [quickQOpen, setQuickQOpen] = useState(false);
+  const [sharedOpen, setSharedOpen] = useState(false);
+  const [shareDocId, setShareDocId] = useState<string | null>(null);
+  const { sharedDocs, sharedChats, reload: reloadShared } = useSharedWithMe(user.id);
+  const docShares = useDocumentShares(shareDocId);
 
   const loadDocuments = async () => {
     try {
@@ -438,6 +444,22 @@ export default function Sidebar({
                               <button onClick={(e) => { e.stopPropagation(); const tag = prompt("Enter a short reference tag (e.g. project_prd):", doc.reference_tag || ""); if (tag !== null) { setDocumentReferenceTag(doc.id, tag || null).then(cleanTag => { setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, reference_tag: cleanTag } : d)); toast.success(cleanTag ? `Tag set: #${cleanTag}` : "Tag removed"); }).catch(() => toast.error("Failed")); } }} className="p-1 rounded-lg hover:bg-accent" title="Set tag"><Hash className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title={t("rename")}><Pencil className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title={t("delete")}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
+                              <span onClick={(e) => e.stopPropagation()}>
+                                <ShareDialog
+                                  type="document"
+                                  name={doc.name}
+                                  shares={shareDocId === doc.id ? docShares.shares : []}
+                                  loading={docShares.loading}
+                                  onAdd={(email, perm) => docShares.addShare(email, perm, user.id)}
+                                  onRemove={docShares.removeShare}
+                                  onUpdatePermission={docShares.updatePermission}
+                                  trigger={
+                                    <button onClick={() => setShareDocId(doc.id)} className="p-1 rounded-lg hover:bg-accent" title="Share">
+                                      <Share2 className="h-3 w-3 text-muted-foreground" />
+                                    </button>
+                                  }
+                                />
+                              </span>
                             </div>
                           )}
                         </motion.div>
@@ -469,6 +491,51 @@ export default function Sidebar({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* SHARED WITH ME */}
+          {(sharedDocs.length > 0 || sharedChats.length > 0) && (
+            <>
+              <SectionHeader label="Shared with me" icon={<Users className="h-3.5 w-3.5" />} count={sharedDocs.length + sharedChats.length} open={sharedOpen} onToggle={() => setSharedOpen(!sharedOpen)} />
+              <AnimatePresence initial={false}>
+                {sharedOpen && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                    <div className="space-y-0.5 py-0.5 px-1">
+                      {sharedDocs.length > 0 && (
+                        <>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1">Documents</p>
+                          {sharedDocs.map((doc) => (
+                            <button key={doc.id} onClick={() => onSelectDocument(doc.id, doc.name)} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-left hover:bg-accent/70 transition-all group">
+                              {getDocIcon(doc.name)}
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate text-xs font-medium text-foreground block">{doc.name}</span>
+                                <span className="text-[10px] text-muted-foreground">by {doc.owner_email?.split("@")[0]} • {doc.permission}</span>
+                              </div>
+                              <Share2 className="h-3 w-3 text-primary/50 shrink-0" />
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {sharedChats.length > 0 && (
+                        <>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1">Chats</p>
+                          {sharedChats.map((chat) => (
+                            <button key={chat.id} onClick={() => { if (chat.document_id) onSelectChatSession(chat.id, chat.document_id, chat.title); }} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-left hover:bg-accent/70 transition-all group">
+                              <MessageSquare className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate text-xs font-medium text-foreground block">{chat.title}</span>
+                                <span className="text-[10px] text-muted-foreground">by {chat.owner_email?.split("@")[0]} • {chat.permission}</span>
+                              </div>
+                              <Share2 className="h-3 w-3 text-primary/50 shrink-0" />
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
 
           {/* FOLDERS */}
           <SectionHeader label={t("folders")} icon={<Folder className="h-3.5 w-3.5" />} count={folders.length} open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)}

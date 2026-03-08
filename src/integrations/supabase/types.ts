@@ -47,6 +47,47 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_session_shares: {
+        Row: {
+          chat_session_id: string
+          created_at: string
+          id: string
+          owner_id: string
+          permission: Database["public"]["Enums"]["share_permission"]
+          shared_with_email: string
+          shared_with_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          chat_session_id: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with_email: string
+          shared_with_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chat_session_id?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with_email?: string
+          shared_with_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_session_shares_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_sessions: {
         Row: {
           created_at: string
@@ -229,6 +270,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_shares: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          owner_id: string
+          permission: Database["public"]["Enums"]["share_permission"]
+          shared_with_email: string
+          shared_with_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          owner_id: string
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with_email: string
+          shared_with_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          owner_id?: string
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with_email?: string
+          shared_with_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_shares_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
@@ -789,6 +871,7 @@ export type Database = {
     }
     Enums: {
       app_role: "free_user" | "pro_user" | "admin"
+      share_permission: "viewer" | "editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -917,6 +1000,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["free_user", "pro_user", "admin"],
+      share_permission: ["viewer", "editor"],
     },
   },
 } as const
