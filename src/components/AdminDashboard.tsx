@@ -62,6 +62,34 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "" });
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const filePath = `logo-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("logos").upload(filePath, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("logos").getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+      setBrandForm((prev) => ({ ...prev, logoUrl: publicUrl }));
+      toast.success("Logo uploaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    }
+    setLogoUploading(false);
+  };
 
   const [stats, setStats] = useState({
     totalUsers: 0, freeUsers: 0, proUsers: 0, adminUsers: 0,
