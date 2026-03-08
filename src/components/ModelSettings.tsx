@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw, Copy, Key, Eye, EyeOff, Trash2, ShieldCheck, ShieldX } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, AlertCircle, RefreshCw, Copy, Key, Eye, EyeOff, Trash2, ShieldCheck, ShieldX, Terminal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { ModelConfig } from "@/hooks/useModelPreference";
 import { useApiKeys, type ApiKeyStatus } from "@/hooks/useApiKeys";
@@ -29,7 +28,6 @@ const CLOUD_MODELS: ModelOption[] = [
   { id: "gpt-5", name: "GPT-5", type: "cloud", description: "Powerful reasoning, multimodal. Best for accuracy & nuance.", available: true, provider: "platform" },
   { id: "gpt-5-mini", name: "GPT-5 Mini", type: "cloud", description: "Strong performance at lower cost. Good all-rounder.", available: true, provider: "platform" },
   { id: "gpt-5-nano", name: "GPT-5 Nano", type: "cloud", description: "Speed & cost optimized. Great for high-volume tasks.", available: true, provider: "platform" },
-  // BYOK models
   { id: "byok-gemini-pro", name: "Gemini Pro (Your Key)", type: "cloud", description: "Use your own Gemini API key. No platform limits.", provider: "gemini" },
   { id: "byok-gemini-flash", name: "Gemini Flash (Your Key)", type: "cloud", description: "Fast Gemini model with your own API key.", provider: "gemini" },
   { id: "byok-gpt-4o", name: "GPT-4o (Your Key)", type: "cloud", description: "Use your own OpenAI API key. Full GPT-4o access.", provider: "openai" },
@@ -58,33 +56,62 @@ interface ModelSettingsProps {
 
 export default function ModelSettings({ currentModel, onModelChange, isAdmin, userId }: ModelSettingsProps) {
   const [search, setSearch] = useState("");
-  const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline">("checking");
+  const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline" | "cors_error">("checking");
   const [localModels, setLocalModels] = useState<string[]>([]);
   const [pullingModel, setPullingModel] = useState<string | null>(null);
   const [ollamaEndpoint, setOllamaEndpoint] = useState(currentModel.ollama_endpoint || "http://localhost:11434");
   const [activeTab, setActiveTab] = useState<"models" | "api-keys">("models");
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const { keys, loading: keysLoading, saveKey, validateKey, deleteKey, hasValidKey } = useApiKeys(userId || null);
 
   const checkOllama = useCallback(async () => {
     setOllamaStatus("checking");
+    setLastError(null);
     try {
-      const resp = await fetch(`${ollamaEndpoint}/api/tags`, { signal: AbortSignal.timeout(3000) });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const resp = await fetch(`${ollamaEndpoint}/api/tags`, {
+        signal: controller.signal,
+        mode: "cors",
+      });
+      clearTimeout(timeoutId);
+
       if (resp.ok) {
         const data = await resp.json();
-        setLocalModels((data.models || []).map((m: any) => m.name));
+        const modelNames = (data.models || []).map((m: any) => m.name);
+        setLocalModels(modelNames);
         setOllamaStatus("online");
+        if (modelNames.length > 0) {
+          toast.success(`Ollama connected! Found ${modelNames.length} model(s).`);
+        }
       } else {
         setOllamaStatus("offline");
+        setLastError(`Server returned status ${resp.status}`);
       }
-    } catch {
-      setOllamaStatus("offline");
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        setOllamaStatus("offline");
+        setLastError("Connection timed out");
+      } else if (err.message?.includes("Failed to fetch") || err.message?.includes("NetworkError") || err.name === "TypeError") {
+        // This typically means CORS block or server not running
+        setOllamaStatus("cors_error");
+        setLastError("Cannot reach Ollama — either not running or CORS is blocking the request.");
+      } else {
+        setOllamaStatus("offline");
+        setLastError(err.message || "Unknown error");
+      }
     }
   }, [ollamaEndpoint]);
 
   useEffect(() => { checkOllama(); }, [checkOllama]);
 
   const handlePullModel = async (modelId: string) => {
+    if (ollamaStatus !== "online") {
+      toast.error("Ollama must be connected first.");
+      return;
+    }
     setPullingModel(modelId);
     toast.info(`Pulling ${modelId}... This may take a while.`);
     try {
@@ -119,15 +146,13 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
 
   const handleSelectModel = (option: ModelOption) => {
     if (option.type === "local" && ollamaStatus !== "online") {
-      toast.error("Ollama is not running. Start Ollama first to use local models.");
+      toast.error("Ollama is not connected. Fix the connection first to use local models.");
       return;
     }
     if (option.type === "local" && !localModels.some((m) => m.startsWith(option.id.split(":")[0]))) {
       handlePullModel(option.id);
       return;
     }
-
-    // Check BYOK key requirement
     if (option.provider === "gemini" && !hasValidKey("gemini")) {
       toast.error("Please add a valid Gemini API key first.");
       setActiveTab("api-keys");
@@ -238,14 +263,21 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
             />
           </div>
 
-          {/* Ollama status */}
+          {/* Ollama connection status */}
           <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Cpu className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs font-medium text-foreground">Ollama Server</span>
-              <div className={`h-2 w-2 rounded-full ${ollamaStatus === "online" ? "bg-success" : ollamaStatus === "offline" ? "bg-destructive" : "bg-warning animate-pulse"}`} />
+              <div className={`h-2 w-2 rounded-full ${
+                ollamaStatus === "online" ? "bg-success" :
+                ollamaStatus === "checking" ? "bg-warning animate-pulse" :
+                "bg-destructive"
+              }`} />
               <span className="text-[11px] text-muted-foreground">
-                {ollamaStatus === "online" ? `Online (${localModels.length} models)` : ollamaStatus === "offline" ? "Offline" : "Checking..."}
+                {ollamaStatus === "online" ? `Online (${localModels.length} models)` :
+                 ollamaStatus === "checking" ? "Checking..." :
+                 ollamaStatus === "cors_error" ? "Connection blocked" :
+                 "Offline"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -255,8 +287,8 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
                 className="h-7 text-[11px] w-48 rounded-lg"
                 placeholder="http://localhost:11434"
               />
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={checkOllama}>
-                <RefreshCw className="h-3 w-3" />
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={checkOllama} disabled={ollamaStatus === "checking"}>
+                <RefreshCw className={`h-3 w-3 ${ollamaStatus === "checking" ? "animate-spin" : ""}`} />
               </Button>
             </div>
           </div>
@@ -308,17 +340,27 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
                     <Monitor className="h-3.5 w-3.5 text-success" />
                     <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Local Models (Ollama)</span>
                   </div>
-                  {ollamaStatus === "offline" && (
+
+                  {/* Ollama troubleshooting panel */}
+                  {(ollamaStatus === "offline" || ollamaStatus === "cors_error") && (
                     <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 mb-3 space-y-3">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-foreground">Ollama is not running</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">Start the Ollama server to use local models.</p>
+                          <p className="text-xs font-semibold text-foreground">
+                            {ollamaStatus === "cors_error" ? "Cannot connect to Ollama" : "Ollama is not running"}
+                          </p>
+                          {lastError && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{lastError}</p>
+                          )}
                         </div>
                       </div>
+
+                      {/* Step 1: Start Ollama */}
                       <div className="rounded-lg bg-background border border-border p-3 space-y-2">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Run this command in your terminal:</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <Terminal className="h-3 w-3" /> Step 1: Start Ollama
+                        </p>
                         <div className="flex items-center gap-2">
                           <code className="flex-1 text-xs font-mono bg-accent/50 px-3 py-2 rounded-lg text-foreground select-all">ollama serve</code>
                           <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg shrink-0 gap-1" onClick={() => { navigator.clipboard.writeText("ollama serve"); toast.success("Command copied!"); }}>
@@ -326,6 +368,30 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
                           </Button>
                         </div>
                       </div>
+
+                      {/* Step 2: Enable CORS (if cors_error) */}
+                      {ollamaStatus === "cors_error" && (
+                        <div className="rounded-lg bg-background border border-border p-3 space-y-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                            <Terminal className="h-3 w-3" /> Step 2: Enable browser access (CORS)
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Set this environment variable before starting Ollama to allow browser connections:
+                          </p>
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-xs font-mono bg-accent/50 px-3 py-2 rounded-lg text-foreground select-all">OLLAMA_ORIGINS=* ollama serve</code>
+                              <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg shrink-0 gap-1" onClick={() => { navigator.clipboard.writeText("OLLAMA_ORIGINS=* ollama serve"); toast.success("Command copied!"); }}>
+                                <Copy className="h-3 w-3" />Copy
+                              </Button>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">
+                              On Windows: <code className="bg-accent/50 px-1 rounded text-foreground">set OLLAMA_ORIGINS=*</code> then <code className="bg-accent/50 px-1 rounded text-foreground">ollama serve</code>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg gap-1.5" onClick={checkOllama}>
                           <RefreshCw className="h-3 w-3" />Retry Connection
@@ -338,6 +404,24 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin, us
                       </div>
                     </div>
                   )}
+
+                  {/* Online: show detected models */}
+                  {ollamaStatus === "online" && localModels.length > 0 && (
+                    <div className="rounded-xl border border-success/20 bg-success/5 p-3 mb-3">
+                      <p className="text-[11px] font-semibold text-foreground mb-1.5">
+                        <Check className="h-3 w-3 inline mr-1 text-success" />
+                        Detected {localModels.length} installed model(s):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {localModels.map((m) => (
+                          <Badge key={m} variant="outline" className="text-[10px] border-success/30 text-success bg-success/5">
+                            {m}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5">
                     {localFiltered.map((m) => (
                       <ModelCard
@@ -391,35 +475,15 @@ function ApiKeysPanel({
             </p>
           </div>
         </div>
-
         <div className="space-y-3">
-          <ApiKeyInput
-            provider="gemini"
-            label="Google Gemini"
-            placeholder="AIzaSy..."
-            status={keys.find((k) => k.provider === "gemini")}
-            loading={loading}
-            onSave={onSave}
-            onValidate={onValidate}
-            onDelete={onDelete}
-          />
-          <ApiKeyInput
-            provider="openai"
-            label="OpenAI"
-            placeholder="sk-..."
-            status={keys.find((k) => k.provider === "openai")}
-            loading={loading}
-            onSave={onSave}
-            onValidate={onValidate}
-            onDelete={onDelete}
-          />
+          <ApiKeyInput provider="gemini" label="Google Gemini" placeholder="AIzaSy..." status={keys.find((k) => k.provider === "gemini")} loading={loading} onSave={onSave} onValidate={onValidate} onDelete={onDelete} />
+          <ApiKeyInput provider="openai" label="OpenAI" placeholder="sk-..." status={keys.find((k) => k.provider === "openai")} loading={loading} onSave={onSave} onValidate={onValidate} onDelete={onDelete} />
         </div>
       </div>
-
       <div className="rounded-xl border border-border bg-accent/30 p-3">
         <p className="text-[11px] text-muted-foreground">
           <ShieldCheck className="h-3.5 w-3.5 inline mr-1 text-success" />
-          Your API keys are encrypted server-side and never exposed in frontend code. Keys are only decrypted when making AI requests.
+          Your API keys are encrypted server-side and never exposed in frontend code.
         </p>
       </div>
     </div>
@@ -430,11 +494,7 @@ function ApiKeyInput({
   provider, label, placeholder, status, loading,
   onSave, onValidate, onDelete,
 }: {
-  provider: string;
-  label: string;
-  placeholder: string;
-  status?: ApiKeyStatus;
-  loading: boolean;
+  provider: string; label: string; placeholder: string; status?: ApiKeyStatus; loading: boolean;
   onSave: (provider: string, key: string) => Promise<any>;
   onValidate: (provider: string) => Promise<any>;
   onDelete: (provider: string) => Promise<any>;
@@ -449,15 +509,9 @@ function ApiKeyInput({
     setSaving(true);
     try {
       const result = await onSave(provider, keyValue.trim());
-      if (result?.valid) {
-        toast.success(`${label} API key saved and validated!`);
-        setKeyValue("");
-      } else {
-        toast.error(`${label} key saved but validation failed: ${result?.error || "Invalid key"}`);
-      }
-    } catch {
-      toast.error(`Failed to save ${label} key`);
-    }
+      if (result?.valid) { toast.success(`${label} API key saved and validated!`); setKeyValue(""); }
+      else toast.error(`${label} key saved but validation failed: ${result?.error || "Invalid key"}`);
+    } catch { toast.error(`Failed to save ${label} key`); }
     setSaving(false);
   };
 
@@ -467,19 +521,13 @@ function ApiKeyInput({
       const result = await onValidate(provider);
       if (result?.valid) toast.success(`${label} key is valid!`);
       else toast.error(`${label} key validation failed: ${result?.error || "Invalid"}`);
-    } catch {
-      toast.error("Validation failed");
-    }
+    } catch { toast.error("Validation failed"); }
     setValidating(false);
   };
 
   const handleDelete = async () => {
-    try {
-      await onDelete(provider);
-      toast.success(`${label} key removed`);
-    } catch {
-      toast.error("Failed to remove key");
-    }
+    try { await onDelete(provider); toast.success(`${label} key removed`); }
+    catch { toast.error("Failed to remove key"); }
   };
 
   return (
@@ -505,21 +553,10 @@ function ApiKeyInput({
           </div>
         )}
       </div>
-
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Input
-            type={showKey ? "text" : "password"}
-            value={keyValue}
-            onChange={(e) => setKeyValue(e.target.value)}
-            placeholder={status ? "••••••••••••• (saved)" : placeholder}
-            className="h-8 text-xs rounded-lg pr-8"
-          />
-          <button
-            type="button"
-            onClick={() => setShowKey(!showKey)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
+          <Input type={showKey ? "text" : "password"} value={keyValue} onChange={(e) => setKeyValue(e.target.value)} placeholder={status ? "••••••••••••• (saved)" : placeholder} className="h-8 text-xs rounded-lg pr-8" />
+          <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
         </div>
@@ -528,7 +565,6 @@ function ApiKeyInput({
           {status ? "Update" : "Save"}
         </Button>
       </div>
-
       {status?.last_validated_at && (
         <p className="text-[10px] text-muted-foreground">Last validated: {new Date(status.last_validated_at).toLocaleString()}</p>
       )}
@@ -541,14 +577,7 @@ function ApiKeyInput({
 function ModelCard({
   model, selected, installed, pulling, ollamaOnline, hasKey, onSelect, onPull,
 }: {
-  model: ModelOption;
-  selected: boolean;
-  installed?: boolean;
-  pulling?: boolean;
-  ollamaOnline?: boolean;
-  hasKey?: boolean;
-  onSelect: () => void;
-  onPull?: () => void;
+  model: ModelOption; selected: boolean; installed?: boolean; pulling?: boolean; ollamaOnline?: boolean; hasKey?: boolean; onSelect: () => void; onPull?: () => void;
 }) {
   const isByok = model.provider === "gemini" || model.provider === "openai";
 
@@ -557,35 +586,24 @@ function ModelCard({
       whileHover={{ scale: 1.005 }}
       whileTap={{ scale: 0.995 }}
       onClick={() => {
-        if (model.type === "local" && !installed && ollamaOnline) {
-          onPull?.();
-        } else {
-          onSelect();
-        }
+        if (model.type === "local" && !installed && ollamaOnline) onPull?.();
+        else onSelect();
       }}
       className={`flex items-center gap-3 w-full rounded-xl border p-3 text-left transition-all ${
-        selected
-          ? "border-primary bg-primary/5 shadow-sm"
-          : "border-border hover:border-primary/30 hover:bg-accent/30"
+        selected ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30 hover:bg-accent/30"
       }`}
     >
       <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
         selected ? "gradient-primary" : isByok ? "bg-warning/10" : "bg-accent"
       }`}>
-        {isByok ? (
-          <Key className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-warning"}`} />
-        ) : model.type === "cloud" ? (
-          <Cloud className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
-        ) : (
-          <Monitor className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
-        )}
+        {isByok ? <Key className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-warning"}`} />
+         : model.type === "cloud" ? <Cloud className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
+         : <Monitor className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-semibold ${selected ? "text-primary" : "text-foreground"}`}>{model.name}</span>
-          {model.parameterSize && (
-            <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded text-muted-foreground">{model.parameterSize}</span>
-          )}
+          {model.parameterSize && <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded text-muted-foreground">{model.parameterSize}</span>}
           {isByok && hasKey !== undefined && (
             <Badge variant="outline" className={`text-[10px] h-4 ${hasKey ? "border-success/30 text-success" : "border-muted-foreground/30 text-muted-foreground"}`}>
               {hasKey ? "Key ✓" : "No Key"}
@@ -596,24 +614,16 @@ function ModelCard({
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         {model.type === "local" && pulling && (
-          <Badge variant="outline" className="border-warning/30 text-warning text-[10px] gap-1">
-            <Loader2 className="h-3 w-3 animate-spin" />Pulling
-          </Badge>
+          <Badge variant="outline" className="border-warning/30 text-warning text-[10px] gap-1"><Loader2 className="h-3 w-3 animate-spin" />Pulling</Badge>
         )}
         {model.type === "local" && !pulling && installed && (
-          <Badge variant="outline" className="border-success/30 text-success text-[10px] gap-1">
-            <Check className="h-3 w-3" />Installed
-          </Badge>
+          <Badge variant="outline" className="border-success/30 text-success text-[10px] gap-1"><Check className="h-3 w-3" />Installed</Badge>
         )}
         {model.type === "local" && !pulling && !installed && ollamaOnline && (
-          <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground text-[10px] gap-1">
-            <Download className="h-3 w-3" />Pull
-          </Badge>
+          <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground text-[10px] gap-1"><Download className="h-3 w-3" />Pull</Badge>
         )}
         {selected && (
-          <div className="h-5 w-5 rounded-full gradient-primary flex items-center justify-center">
-            <Check className="h-3 w-3 text-primary-foreground" />
-          </div>
+          <div className="h-5 w-5 rounded-full gradient-primary flex items-center justify-center"><Check className="h-3 w-3 text-primary-foreground" /></div>
         )}
       </div>
     </motion.button>
