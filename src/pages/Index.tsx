@@ -167,6 +167,8 @@ const Index = () => {
         userRole={role}
         onUpgradeClick={handleUpgradeClick}
         onAdminClick={() => setView("admin")}
+        profileName={profile?.name}
+        profilePicture={profile?.profile_picture}
       />
 
       {/* Main Content */}
