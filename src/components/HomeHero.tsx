@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
+import testimonialBadge from "@/assets/testimonial-badge.png";
 
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
 
@@ -257,6 +258,15 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
               )}
             </div>
           </div>
+        </div>
+
+        {/* Testimonial */}
+        <div className="flex justify-center mt-8">
+          <img
+            src={testimonialBadge}
+            alt="Testimonial: It's like ChatGPT, but for research papers - Mushtaq Bilal, PhD"
+            className="max-w-md w-full h-auto rounded-2xl"
+          />
         </div>
       </motion.div>
     </div>
