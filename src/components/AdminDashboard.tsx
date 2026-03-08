@@ -69,6 +69,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [logoUploading, setLogoUploading] = useState(false);
   const [changingRole, setChangingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState("");
 
   const handleDeleteUser = async (userId: string) => {
     setDeletingUser(userId);
