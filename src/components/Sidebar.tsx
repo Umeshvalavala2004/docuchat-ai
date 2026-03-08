@@ -285,7 +285,7 @@ export default function Sidebar({
             {multiSelectMode ? "Cancel multi-select" : "Select multiple"}
           </button>
         </div>
-      )
+      )}
 
       {/* Content */}
       <ScrollArea className="flex-1 px-3">
