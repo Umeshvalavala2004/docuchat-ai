@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import RagDebugPanel from "@/components/RagDebugPanel";
 import { Badge } from "@/components/ui/badge";
 import type { ModelConfig } from "@/hooks/useModelPreference";
+import { useDailyUsage } from "@/hooks/useDailyUsage";
+import { Progress } from "@/components/ui/progress";
 
 interface ChatInterfaceProps {
   documentId: string;
