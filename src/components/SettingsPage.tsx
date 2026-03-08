@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { UserProfile } from "@/hooks/useProfile";
 import ModelSettings from "@/components/ModelSettings";
 import type { ModelConfig } from "@/hooks/useModelPreference";
+import { useBranding } from "@/hooks/useBranding";
 
 interface SettingsPageProps {
   onBack: () => void;
