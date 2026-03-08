@@ -107,13 +107,13 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
   };
 
   return (
-    <div className="flex flex-1 flex-col items-center overflow-y-auto px-4 py-8 md:py-14">
+    <div className="flex flex-1 flex-col items-center overflow-y-auto px-4 py-8 md:py-14 gradient-mesh">
       {/* Hero heading */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-8"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center mb-10"
       >
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
           <Sparkles className="inline h-7 w-7 md:h-9 md:w-9 text-primary mr-2 -mt-1" />
@@ -126,26 +126,28 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
 
       {/* Main card */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.15 }}
-        className="w-full max-w-4xl rounded-2xl border border-border bg-card/80 backdrop-blur-sm shadow-elevated p-6 md:p-8"
+        transition={{ duration: 0.6, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-4xl rounded-2xl glass-card shadow-float p-6 md:p-8"
       >
         {/* Tool tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-4 mb-4 scrollbar-none">
-          {TABS.map((tab) => (
-            <button
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-4 mb-4 scrollbar-none">
+          {TABS.map((tab, i) => (
+            <motion.button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setUploadedFile(null); }}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all ${
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  ? "gradient-primary text-primary-foreground shadow-glow"
+                  : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
               }`}
             >
               {tab.icon}
               {tab.labelKey}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -153,9 +155,10 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
         <AnimatePresence mode="wait">
           <motion.p
             key={activeTab}
-            initial={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3 }}
             className="text-center text-lg md:text-xl font-semibold text-foreground mb-6"
           >
             {currentTab.subtitle}
@@ -165,15 +168,16 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
         {/* Upload area - two panels */}
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4">
           {/* Drop zone */}
-          <div
+          <motion.div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`relative cursor-pointer rounded-xl border-2 border-dashed p-8 md:p-10 flex flex-col items-center justify-center text-center transition-all min-h-[180px] ${
+            whileHover={{ scale: 1.005 }}
+            className={`relative cursor-pointer rounded-xl border-2 border-dashed p-8 md:p-10 flex flex-col items-center justify-center text-center transition-all duration-300 min-h-[180px] ${
               isDragging
-                ? "border-primary bg-primary/5 scale-[1.01]"
-                : "border-border hover:border-primary/40 hover:bg-muted/30"
+                ? "border-primary bg-primary/5 scale-[1.01] shadow-glow"
+                : "border-border/60 hover:border-primary/40 hover:bg-accent/30"
             }`}
           >
             <input
@@ -188,13 +192,13 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
             />
             <AnimatePresence mode="wait">
               {uploading ? (
-                <motion.div key="uploading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-3">
+                <motion.div key="uploading" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex flex-col items-center gap-3">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                   <p className="text-sm font-medium text-foreground">Uploading & processing...</p>
                 </motion.div>
               ) : uploadedFile ? (
-                <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-3">
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
+                <motion.div key="done" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex flex-col items-center gap-3">
+                  <CheckCircle2 className="h-8 w-8 text-success" />
                   <p className="text-sm font-medium text-foreground">{uploadedFile}</p>
                   <p className="text-xs text-muted-foreground">Drop another file or click to upload</p>
                 </motion.div>
@@ -202,17 +206,17 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     Drop a file or{" "}
-                    <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm">
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground shadow-elegant hover-lift">
                       upload <Upload className="h-3.5 w-3.5" />
                     </span>
                   </p>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
 
           {/* Text input zone */}
-          <div className="rounded-xl border border-border bg-background p-4 flex flex-col min-h-[180px]">
+          <div className="rounded-xl border border-border/60 bg-background/60 p-4 flex flex-col min-h-[180px] transition-all duration-200 focus-within:border-primary/30 focus-within:shadow-elegant">
             <textarea
               ref={textareaRef}
               value={textInput}
@@ -224,14 +228,14 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
             />
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <kbd className="rounded border border-border bg-muted px-2 py-1 font-mono text-[11px] font-medium shadow-sm">CTRL</kbd>
-                <kbd className="rounded border border-border bg-muted px-2 py-1 font-mono text-[11px] font-medium shadow-sm">V</kbd>
+                <kbd className="rounded-md border border-border/60 bg-muted/60 px-2 py-1 font-mono text-[11px] font-medium shadow-sm">CTRL</kbd>
+                <kbd className="rounded-md border border-border/60 bg-muted/60 px-2 py-1 font-mono text-[11px] font-medium shadow-sm">V</kbd>
                 <span>to paste text or links</span>
               </div>
               {activeTab !== "chat" && textInput.trim() && (
                 <Button
                   size="sm"
-                  className="h-8 rounded-lg gap-1.5"
+                  className="h-8 rounded-xl gap-1.5 gradient-primary shadow-glow hover:opacity-90 transition-opacity"
                   onClick={handleTextSubmit}
                 >
                   <Send className="h-3.5 w-3.5" />
