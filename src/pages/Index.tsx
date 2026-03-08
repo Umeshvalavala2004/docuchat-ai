@@ -295,6 +295,14 @@ const Index = () => {
                 <span className="font-medium text-foreground">{t("ai_tools")}</span>
               </div>
             )}
+            {view === "dashboard" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg gradient-primary flex items-center justify-center">
+                  <LayoutDashboard className="h-3 w-3 text-primary-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Dashboard</span>
+              </div>
+            )}
           </div>
 
           {/* Mobile toggle for PDF/Chat */}
