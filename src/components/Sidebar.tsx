@@ -504,7 +504,7 @@ export default function Sidebar({
                   <button onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
                     <Sparkles className="h-3.5 w-3.5" /> Open All Tools
                   </button>
-                  {tools.map((tool) => (
+                  {sidebarTools.map((tool) => (
                     <button key={tool.id} onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
                       <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{tool.label}
                     </button>
