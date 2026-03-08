@@ -53,13 +53,13 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; progr
   error: { icon: <AlertCircle className="h-3.5 w-3.5 text-destructive" />, label: "Error", progress: 0 },
 };
 
-const tools = [
-  { id: "ai-writer", label: "AI Writer", icon: PenLine, color: "text-emerald-500" },
-  { id: "ai-detector", label: "AI Detector", icon: Shield, color: "text-amber-500" },
-  { id: "youtube-chat", label: "YouTube Chat", icon: Youtube, color: "text-red-500" },
-  { id: "research", label: "Research Assistant", icon: FlaskConical, color: "text-violet-500" },
-  { id: "web-chat", label: "Web Page Chat", icon: Globe, color: "text-sky-500" },
-  { id: "doc-compare", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
+const sidebarTools = [
+  { id: "diffchecker-pdf", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
+  { id: "diffchecker-text", label: "Text Diff Checker", icon: FileText, color: "text-blue-500" },
+  { id: "json-formatter", label: "JSON Formatter", icon: Braces, color: "text-emerald-500" },
+  { id: "stackedit", label: "Markdown Editor", icon: PenLine, color: "text-violet-500" },
+  { id: "beautifier", label: "Code Beautifier", icon: Code2, color: "text-cyan-500" },
+  { id: "regex101", label: "Regex Tester", icon: Regex, color: "text-pink-500" },
 ];
 
 function getDocIcon(name: string) {
