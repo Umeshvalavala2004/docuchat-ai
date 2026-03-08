@@ -114,6 +114,7 @@ export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
   initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig,
 }: ChatInterfaceProps) {
+  const { usage, checkAndIncrement } = useDailyUsage(userId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
