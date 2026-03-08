@@ -110,7 +110,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             ))}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 DocChat AI. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
       </div>
 
       {/* Right panel - form */}
