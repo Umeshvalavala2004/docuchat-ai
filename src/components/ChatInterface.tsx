@@ -611,7 +611,7 @@ export default function ChatInterface({
               className="min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
-            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
+            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading || (docStatus !== "ready" && docStatus !== "error")} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
