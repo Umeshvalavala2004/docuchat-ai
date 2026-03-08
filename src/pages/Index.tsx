@@ -24,6 +24,7 @@ const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const { role, isAdmin, loading: roleLoading, refetch: refetchRole } = useUserRole(user?.id);
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(user?.id);
+  const { profile } = useProfile(user?.id);
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
