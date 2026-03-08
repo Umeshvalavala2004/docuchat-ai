@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import type { ModelConfig } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { Progress } from "@/components/ui/progress";
+import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from "@/components/DocumentMentionDropdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatInterfaceProps {
   documentId: string;
