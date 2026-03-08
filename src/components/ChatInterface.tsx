@@ -130,6 +130,7 @@ export default function ChatInterface({
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [showKeyPoints, setShowKeyPoints] = useState(false);
+  const [docStatus, setDocStatus] = useState<string>("ready");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -158,6 +159,19 @@ export default function ChatInterface({
     };
     load();
   }, [userId]);
+
+  // Poll document status when not ready
+  useEffect(() => {
+    if (!documentId) return;
+    const checkStatus = async () => {
+      const { data } = await supabase.from("documents").select("status").eq("id", documentId).single();
+      if (data) setDocStatus(data.status);
+    };
+    checkStatus();
+    if (docStatus === "ready" || docStatus === "error") return;
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, [documentId, docStatus]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -344,6 +358,27 @@ export default function ChatInterface({
           )}
         </div>
       </div>
+
+      {/* Processing indicator */}
+      {docStatus !== "ready" && docStatus !== "error" && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="px-4 py-3 border-b border-border/50 bg-warning/10"
+        >
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-4 w-4 animate-spin text-warning" />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-foreground">
+                Document is {docStatus === "pending" ? "queued for processing" : docStatus === "processing" ? "being processed" : "being indexed"}…
+              </p>
+              <p className="text-[10px] text-muted-foreground">Chat will be available once processing completes.</p>
+            </div>
+          </div>
+          <Progress value={docStatus === "pending" ? 10 : docStatus === "processing" ? 50 : 80} className="mt-2 h-1.5" />
+        </motion.div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {messages.length === 0 && (
@@ -576,7 +611,7 @@ export default function ChatInterface({
               className="min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
-            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
+            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading || (docStatus !== "ready" && docStatus !== "error")} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
