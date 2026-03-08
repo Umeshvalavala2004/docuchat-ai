@@ -250,7 +250,7 @@ ${context}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: modelId || "google/gemini-3-flash-preview",
         messages,
         stream: true,
       }),
