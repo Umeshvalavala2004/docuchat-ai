@@ -7,6 +7,7 @@ import {
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
   ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
   Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench, Shield,
+  Star, Pin, Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
+import { toggleDocumentFavorite, toggleDocumentPinned, setDocumentReferenceTag } from "@/lib/documentActions";
 import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
@@ -187,7 +189,14 @@ export default function Sidebar({
     setFolders((prev) => prev.map((f) => (f.id === folderId ? { ...f, open: !f.open } : f)));
   };
 
-  const filteredDocs = documents.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const sortedDocs = [...documents].sort((a, b) => {
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    if (a.is_favorite && !b.is_favorite) return -1;
+    if (!a.is_favorite && b.is_favorite) return 1;
+    return 0;
+  });
+  const filteredDocs = sortedDocs.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredSessions = chatSessions.filter((s) =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.documents?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
@@ -415,10 +424,18 @@ export default function Sidebar({
                                 </>
                               )}
                               {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && <Progress value={status.progress} className="h-0.5 mt-1" />}
+                              {doc.reference_tag && (
+                                <span className="text-[10px] text-primary font-mono">#{doc.reference_tag}</span>
+                              )}
+                              {doc.is_pinned && <Pin className="h-2.5 w-2.5 text-primary shrink-0" />}
+                              {doc.is_favorite && <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500 shrink-0" />}
                             </div>
                           </button>
                           {doc.status === "ready" && renamingId !== doc.id && (
-                            <div className="flex items-center gap-0.5 px-2.5 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-0.5 px-2.5 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
+                              <button onClick={async (e) => { e.stopPropagation(); try { const newVal = await toggleDocumentPinned(doc.id, doc.is_pinned); setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, is_pinned: newVal } : d)); toast.success(newVal ? "Pinned" : "Unpinned"); } catch { toast.error("Failed"); } }} className="p-1 rounded-lg hover:bg-accent" title="Pin"><Pin className={`h-3 w-3 ${doc.is_pinned ? "text-primary" : "text-muted-foreground"}`} /></button>
+                              <button onClick={async (e) => { e.stopPropagation(); try { const newVal = await toggleDocumentFavorite(doc.id, doc.is_favorite); setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, is_favorite: newVal } : d)); toast.success(newVal ? "Favorited" : "Unfavorited"); } catch { toast.error("Failed"); } }} className="p-1 rounded-lg hover:bg-accent" title="Favorite"><Star className={`h-3 w-3 ${doc.is_favorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} /></button>
+                              <button onClick={(e) => { e.stopPropagation(); const tag = prompt("Enter a short reference tag (e.g. project_prd):", doc.reference_tag || ""); if (tag !== null) { setDocumentReferenceTag(doc.id, tag || null).then(cleanTag => { setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, reference_tag: cleanTag } : d)); toast.success(cleanTag ? `Tag set: #${cleanTag}` : "Tag removed"); }).catch(() => toast.error("Failed")); } }} className="p-1 rounded-lg hover:bg-accent" title="Set tag"><Hash className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title={t("rename")}><Pencil className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title={t("delete")}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                             </div>

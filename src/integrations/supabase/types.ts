@@ -305,8 +305,11 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          is_favorite: boolean
+          is_pinned: boolean
           name: string
           page_count: number | null
+          reference_tag: string | null
           status: string
           summary: string | null
           updated_at: string
@@ -320,8 +323,11 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          is_favorite?: boolean
+          is_pinned?: boolean
           name: string
           page_count?: number | null
+          reference_tag?: string | null
           status?: string
           summary?: string | null
           updated_at?: string
@@ -335,8 +341,11 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          is_favorite?: boolean
+          is_pinned?: boolean
           name?: string
           page_count?: number | null
+          reference_tag?: string | null
           status?: string
           summary?: string | null
           updated_at?: string

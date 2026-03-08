@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import type { ModelConfig } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { Progress } from "@/components/ui/progress";
+import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from "@/components/DocumentMentionDropdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatInterfaceProps {
   documentId: string;
@@ -128,6 +130,28 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Mention system state
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [allDocuments, setAllDocuments] = useState<MentionableDocument[]>([]);
+  const [mentionedDocs, setMentionedDocs] = useState<MentionableDocument[]>([]);
+
+  // Load user documents for mention system
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("documents")
+        .select("id, name, reference_tag, is_favorite, is_pinned, file_type")
+        .eq("user_id", userId)
+        .eq("status", "ready")
+        .order("is_pinned", { ascending: false })
+        .order("is_favorite", { ascending: false });
+      if (data) setAllDocuments(data as MentionableDocument[]);
+    };
+    load();
+  }, [userId]);
+
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
@@ -154,6 +178,17 @@ export default function ChatInterface({
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
 
+    // Parse #mentions from input
+    const { cleanedInput, mentionedDocIds: parsedDocIds } = parseMentions(userMessage, allDocuments);
+    const resolvedMentionedDocs = allDocuments.filter((d) => parsedDocIds.includes(d.id));
+    setMentionedDocs(resolvedMentionedDocs);
+    setShowMentionDropdown(false);
+
+    // Use mentioned docs or fall back to current document
+    const effectiveDocId = parsedDocIds.length > 0 ? parsedDocIds[0] : documentId;
+    const effectiveDocIds = parsedDocIds.length > 1 ? parsedDocIds : documentIds;
+    const effectiveMessage = cleanedInput || userMessage.trim();
+
     // Check usage limits
     const { allowed } = await checkAndIncrement();
     if (!allowed) {
@@ -166,7 +201,7 @@ export default function ChatInterface({
     setResponseTime(null);
     setTokenCount(null);
     const startTime = performance.now();
-    const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString() };
+    const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString(), mentionedDocs: resolvedMentionedDocs.length > 0 ? resolvedMentionedDocs.map(d => d.reference_tag || d.name) : undefined };
     setMessages((prev) => [...prev, userMsg]);
     let currentSessionId = sessionId;
     if (!currentSessionId) {
@@ -212,7 +247,7 @@ export default function ChatInterface({
     } else {
       // Cloud model via edge function
       await streamChat({
-        message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
+        message: effectiveMessage, documentId: effectiveDocId, documentIds: effectiveDocIds, chatSessionId: currentSessionId, history: messages,
         modelId: modelConfig?.model_id,
         onSources: (s) => { sources = s; setActiveSources(s); },
         onMetrics: (m) => { setActiveMetrics(m); },
@@ -324,6 +359,16 @@ export default function ChatInterface({
                   </div>
                 )}
                 <div className="max-w-[85%] min-w-0">
+                  {/* Mentioned docs tag above user message */}
+                  {msg.role === "user" && msg.mentionedDocs && msg.mentionedDocs.length > 0 && (
+                    <div className="flex items-center gap-1 mb-1 justify-end flex-wrap">
+                      {msg.mentionedDocs.map((tag, j) => (
+                        <Badge key={j} variant="secondary" className="text-[9px] gap-0.5 py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
+                          <Hash className="h-2 w-2" />{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <div className={`rounded-2xl px-4 py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
                     {msg.role === "assistant" ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert text-foreground"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
@@ -426,6 +471,18 @@ export default function ChatInterface({
       {/* Input */}
       <div className="border-t border-border glass p-4">
         <div className="mx-auto max-w-3xl">
+          {/* Mentioned docs indicator */}
+          {mentionedDocs.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+              <span className="text-[10px] text-muted-foreground font-medium">Context:</span>
+              {mentionedDocs.map((doc) => (
+                <Badge key={doc.id} variant="secondary" className="text-[10px] gap-1 py-0.5">
+                  <Hash className="h-2.5 w-2.5" />
+                  {doc.reference_tag || doc.name}
+                </Badge>
+              ))}
+            </div>
+          )}
           {messages.length > 0 && (
             <div className="flex justify-end mb-2">
               <button onClick={() => exportChatAsText(messages, documentName)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -434,12 +491,49 @@ export default function ChatInterface({
             </div>
           )}
           <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-elegant focus-within:border-primary/40 focus-within:shadow-glow transition-all">
+            {/* Mention dropdown */}
+            <DocumentMentionDropdown
+              userId={userId}
+              query={mentionQuery}
+              visible={showMentionDropdown}
+              onSelect={(doc) => {
+                const tag = doc.reference_tag || doc.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+                // Replace the current #query with the selected tag
+                const hashIndex = input.lastIndexOf("#");
+                const before = hashIndex >= 0 ? input.slice(0, hashIndex) : input;
+                setInput(`${before}#${tag} `);
+                setShowMentionDropdown(false);
+                textareaRef.current?.focus();
+              }}
+              onClose={() => setShowMentionDropdown(false)}
+            />
             <Textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about your document..."
+              onChange={(e) => {
+                const val = e.target.value;
+                setInput(val);
+                // Detect # mention trigger
+                const cursorPos = e.target.selectionStart || val.length;
+                const textBeforeCursor = val.slice(0, cursorPos);
+                const hashMatch = textBeforeCursor.match(/#(\S*)$/);
+                if (hashMatch) {
+                  setShowMentionDropdown(true);
+                  setMentionQuery(hashMatch[1]);
+                } else {
+                  setShowMentionDropdown(false);
+                  setMentionQuery("");
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && showMentionDropdown) {
+                  e.preventDefault();
+                  setShowMentionDropdown(false);
+                  return;
+                }
+                handleKeyDown(e);
+              }}
+              placeholder="Ask a question... Type # to mention a document"
               className="min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
@@ -447,7 +541,7 @@ export default function ChatInterface({
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted-foreground/50">Answers are generated from your document content only</p>
+          <p className="mt-2 text-center text-[10px] text-muted-foreground/50">Type # to mention a document for targeted answers</p>
         </div>
       </div>
     </div>

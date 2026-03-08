@@ -16,6 +16,7 @@ export interface ChatMessage {
   sources?: Source[];
   timestamp?: string;
   feedback?: "up" | "down" | null;
+  mentionedDocs?: string[];
 }
 
 export interface RetrievalMetrics {
