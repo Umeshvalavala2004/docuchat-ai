@@ -27,7 +27,7 @@ import NotificationBell from "@/components/NotificationBell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import UserDashboard from "@/components/UserDashboard";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles, LayoutDashboard } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Settings, MessageSquare, FileUp, Search, Sparkles, LayoutDashboard } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -63,6 +63,7 @@ const Index = () => {
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
   const [mobilePanel, setMobilePanel] = useState<"pdf" | "chat">("chat");
+  const [pdfPanelOpen, setPdfPanelOpen] = useState(true);
   const [activeToolType, setActiveToolType] = useState<ToolTab>("chat");
   const [toolText, setToolText] = useState<string | undefined>();
   const [toolDocId, setToolDocId] = useState<string | undefined>();
@@ -354,6 +355,19 @@ const Index = () => {
             </div>
           )}
 
+          {/* Desktop toggle for PDF panel */}
+          {!isMobile && showSplitView && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg"
+              onClick={() => setPdfPanelOpen(!pdfPanelOpen)}
+              title={pdfPanelOpen ? "Hide PDF" : "Show PDF"}
+            >
+              {pdfPanelOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            </Button>
+          )}
+
           {!sidebarCollapsed ? null : (
             <WorkspaceSwitcher
               workspaces={workspaces}
@@ -469,18 +483,22 @@ const Index = () => {
                   )
                 ) : (
                   <ResizablePanelGroup direction="horizontal" className="flex-1">
-                    <ResizablePanel defaultSize={55} minSize={30}>
-                      <PdfViewer
-                        documentId={selectedDocId}
-                        fileName={selectedDocName}
-                        highlightPage={highlightPage}
-                        highlightText={highlightText}
-                        inline={true}
-                        onTextAction={handleTextAction}
-                      />
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={45} minSize={25}>
+                    {pdfPanelOpen && (
+                      <>
+                        <ResizablePanel defaultSize={55} minSize={30}>
+                          <PdfViewer
+                            documentId={selectedDocId}
+                            fileName={selectedDocName}
+                            highlightPage={highlightPage}
+                            highlightText={highlightText}
+                            inline={true}
+                            onTextAction={handleTextAction}
+                          />
+                        </ResizablePanel>
+                        <ResizableHandle withHandle />
+                      </>
+                    )}
+                    <ResizablePanel defaultSize={pdfPanelOpen ? 45 : 100} minSize={25}>
                       <div className="flex flex-col h-full">
                         <ChatInterface
                           key={`${selectedDocId}-${chatSessionId}`}
