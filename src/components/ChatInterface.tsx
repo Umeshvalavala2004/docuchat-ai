@@ -130,6 +130,7 @@ export default function ChatInterface({
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [showKeyPoints, setShowKeyPoints] = useState(false);
+  const [docStatus, setDocStatus] = useState<string>("ready");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
