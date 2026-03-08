@@ -190,8 +190,9 @@ const Index = () => {
                   </Button>
                 </div>
                 <ChatInterface
-                  key={`${selectedDocId}-${chatSessionId}`}
+                  key={`${selectedDocId}-${selectedDocIds.join(",")}-${chatSessionId}`}
                   documentId={selectedDocId}
+                  documentIds={selectedDocIds.length > 1 ? selectedDocIds : undefined}
                   documentName={selectedDocName}
                   userId={user.id}
                   chatSessionId={chatSessionId}
