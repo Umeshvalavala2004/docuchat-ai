@@ -49,6 +49,65 @@ export type Database = {
           },
         ]
       }
+      document_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          document_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          document_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          document_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_activity_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_chunks: {
         Row: {
           chunk_index: number
@@ -90,8 +149,69 @@ export type Database = {
           },
         ]
       }
+      document_tag_assignments: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_tag_assignments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "document_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
+          category_id: string | null
           chunk_count: number | null
           created_at: string
           file_path: string
@@ -106,6 +226,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           chunk_count?: number | null
           created_at?: string
           file_path: string
@@ -120,6 +241,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category_id?: string | null
           chunk_count?: number | null
           created_at?: string
           file_path?: string
@@ -133,7 +255,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "document_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback: {
         Row: {
@@ -346,6 +476,19 @@ export type Database = {
       create_notification: {
         Args: { _message: string; _title: string; _user_id: string }
         Returns: undefined
+      }
+      enterprise_search: {
+        Args: { _limit?: number; _query: string; _user_id: string }
+        Returns: {
+          document_id: string
+          document_name: string
+          page_number: number
+          relevance: number
+          result_id: string
+          result_type: string
+          snippet: string
+          title: string
+        }[]
       }
       get_user_role: {
         Args: { _user_id: string }
