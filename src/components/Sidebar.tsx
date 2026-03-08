@@ -189,7 +189,14 @@ export default function Sidebar({
     setFolders((prev) => prev.map((f) => (f.id === folderId ? { ...f, open: !f.open } : f)));
   };
 
-  const filteredDocs = documents.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const sortedDocs = [...documents].sort((a, b) => {
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    if (a.is_favorite && !b.is_favorite) return -1;
+    if (!a.is_favorite && b.is_favorite) return 1;
+    return 0;
+  });
+  const filteredDocs = sortedDocs.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredSessions = chatSessions.filter((s) =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.documents?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
