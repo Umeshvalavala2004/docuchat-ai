@@ -180,6 +180,12 @@ const Index = () => {
   const handleDocumentUploaded = (doc: any) => {
     if (doc.status === "ready") {
       handleSelectDocument(doc.id, doc.name);
+    } else {
+      // For documents not yet ready (e.g. duplicates still processing), still open them
+      handleSelectDocument(doc.id, doc.name);
+      if (doc.status !== "ready") {
+        toast.info(`Document "${doc.name}" is still ${doc.status}. It will be available for chat once processing completes.`);
+      }
     }
   };
 
