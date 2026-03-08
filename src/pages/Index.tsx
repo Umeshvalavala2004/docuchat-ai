@@ -13,6 +13,7 @@ import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
+import HomeHero from "@/components/HomeHero";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
@@ -340,36 +341,12 @@ const Index = () => {
                 <ToolsDashboard userId={user.id} onBack={() => setView("upload")} />
               </motion.div>
             ) : view === "upload" || !selectedDocId ? (
-              <motion.div
+              <HomeHero
                 key="upload"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex flex-1 flex-col items-center justify-center p-8"
-              >
-                <div className="w-full max-w-lg">
-                  <div className="mb-8 text-center">
-                    <motion.div
-                      initial={{ scale: 0.8 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                      className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-glow"
-                    >
-                      <Upload className="h-9 w-9 text-primary-foreground" />
-                    </motion.div>
-                    <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                      {t("upload_title")}
-                    </h2>
-                    <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-                      {t("upload_subtitle")}
-                    </p>
-                  </div>
-                  <DocumentUpload
-                    userId={user.id}
-                    onDocumentUploaded={handleDocumentUploaded}
-                  />
-                </div>
-              </motion.div>
+                userId={user.id}
+                onDocumentUploaded={handleDocumentUploaded}
+                brandingAppName={branding.appName}
+              />
             ) : showSplitView ? (
               <motion.div
                 key="split"
