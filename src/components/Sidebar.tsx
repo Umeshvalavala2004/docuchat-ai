@@ -56,6 +56,8 @@ interface SidebarProps {
   userRole?: "free_user" | "pro_user" | "admin";
   onUpgradeClick?: () => void;
   onAdminClick?: () => void;
+  profileName?: string | null;
+  profilePicture?: string | null;
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
