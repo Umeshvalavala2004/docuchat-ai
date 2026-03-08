@@ -193,6 +193,7 @@ const Index = () => {
           onSearchClick={() => setView("search")}
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
+          usageInfo={usage}
         />
       )}
 
