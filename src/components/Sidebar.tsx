@@ -325,7 +325,18 @@ export default function Sidebar({
                         }`}
                       >
                         <button
-                          onClick={() => doc.status === "ready" && onSelectDocument(doc.id, doc.name)}
+                          onClick={() => {
+                            if (multiSelectMode && doc.status === "ready") {
+                              setSelectedDocIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(doc.id)) next.delete(doc.id);
+                                else next.add(doc.id);
+                                return next;
+                              });
+                            } else if (doc.status === "ready") {
+                              onSelectDocument(doc.id, doc.name);
+                            }
+                          }}
                           className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left text-sm"
                           disabled={doc.status !== "ready"}
                         >
