@@ -235,7 +235,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     try {
       const { error } = await supabase.rpc("admin_change_user_role", {
         _target_user_id: userId,
-        _new_role: newRole,
+        _new_role: newRole as "free_user" | "pro_user" | "admin",
       });
       if (error) throw error;
       toast.success(`Role updated to ${newRole.replace("_", " ")}`);
