@@ -93,6 +93,8 @@ export default function Sidebar({
   onAdminClick,
   onSettingsClick,
   onSearchClick,
+  onToolsClick,
+  onInsertPrompt,
   profileName,
   profilePicture,
   usageInfo,
