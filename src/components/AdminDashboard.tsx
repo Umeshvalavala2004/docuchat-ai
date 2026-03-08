@@ -531,6 +531,16 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
             {/* ── USERS ── */}
             {tab === "users" && (
+              <div className="space-y-3">
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Search by name or email..."
+                    className="h-9 pl-9 rounded-xl text-xs"
+                  />
+                </div>
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
