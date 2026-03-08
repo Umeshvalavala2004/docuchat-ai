@@ -556,7 +556,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {users.map((u) => (
+                      {users
+                        .filter((u) => {
+                          if (!userSearch.trim()) return true;
+                          const q = userSearch.toLowerCase();
+                          return (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
+                        })
+                        .map((u) => (
                         <tr key={u.id} className="hover:bg-accent/20 transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
