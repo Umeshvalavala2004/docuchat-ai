@@ -222,6 +222,8 @@ const Index = () => {
                   initialMessages={initialMessages}
                   onChatSessionCreated={(id) => setChatSessionId(id)}
                   onCitationClick={handleCitationClick}
+                  injectedPrompt={injectedPrompt}
+                  onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                 />
               </div>
             </motion.div>
