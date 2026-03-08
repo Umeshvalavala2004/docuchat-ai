@@ -581,6 +581,100 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 )}
               </div>
             )}
+
+            {/* ── BRANDING ── */}
+            {tab === "branding" && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 max-w-xl">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Branding & Identity</h3>
+                    <p className="text-xs text-muted-foreground">Customize how the app appears across all pages</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Application Name</Label>
+                      <Input
+                        value={brandForm.appName}
+                        onChange={(e) => setBrandForm({ ...brandForm, appName: e.target.value })}
+                        placeholder="Interface_IQ"
+                        className="h-10 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Subtitle</Label>
+                      <Input
+                        value={brandForm.subtitle}
+                        onChange={(e) => setBrandForm({ ...brandForm, subtitle: e.target.value })}
+                        placeholder="Powered by Interface_IQ"
+                        className="h-10 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Copyright Year</Label>
+                        <Input
+                          value={brandForm.copyrightYear}
+                          onChange={(e) => setBrandForm({ ...brandForm, copyrightYear: e.target.value })}
+                          placeholder="2026"
+                          className="h-10 rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Copyright Text</Label>
+                        <Input
+                          value={brandForm.copyrightText}
+                          onChange={(e) => setBrandForm({ ...brandForm, copyrightText: e.target.value })}
+                          placeholder="Interface_IQ. All rights reserved."
+                          className="h-10 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Logo Image URL</Label>
+                      <Input
+                        value={brandForm.logoUrl}
+                        onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })}
+                        placeholder="https://example.com/logo.png"
+                        className="h-10 rounded-xl"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Leave empty to use the default icon</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Preview</h3>
+                  <div className="rounded-lg border border-border bg-background p-4 space-y-4">
+                    <div className="flex items-center gap-2.5">
+                      {brandForm.logoUrl ? (
+                        <img src={brandForm.logoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
+                          <FileText className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground tracking-tight">{brandForm.appName || "Interface_IQ"}</span>
+                        <span className="text-[9px] text-muted-foreground leading-tight">{brandForm.subtitle || "Powered by Interface_IQ"}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-border pt-3 text-center">
+                      <p className="text-[10px] text-muted-foreground">© {brandForm.copyrightYear || "2026"} {brandForm.copyrightText || "Interface_IQ. All rights reserved."}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveBranding} disabled={brandSaving} className="rounded-xl gradient-primary border-0 gap-2">
+                  {brandSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Branding
+                </Button>
+              </motion.div>
+            )}
           </div>
         </ScrollArea>
       )}
