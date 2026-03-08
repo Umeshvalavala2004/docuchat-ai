@@ -159,6 +159,47 @@ export type Database = {
         }
         Relationships: []
       }
+      highlights: {
+        Row: {
+          comment: string | null
+          created_at: string
+          document_id: string
+          highlight_color: string
+          id: string
+          page_number: number
+          selected_text: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          document_id: string
+          highlight_color?: string
+          id?: string
+          page_number: number
+          selected_text: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          document_id?: string
+          highlight_color?: string
+          id?: string
+          page_number?: number
+          selected_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "highlights_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_session_id: string
