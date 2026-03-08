@@ -178,6 +178,17 @@ export default function ChatInterface({
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
 
+    // Parse #mentions from input
+    const { cleanedInput, mentionedDocIds: parsedDocIds } = parseMentions(userMessage, allDocuments);
+    const resolvedMentionedDocs = allDocuments.filter((d) => parsedDocIds.includes(d.id));
+    setMentionedDocs(resolvedMentionedDocs);
+    setShowMentionDropdown(false);
+
+    // Use mentioned docs or fall back to current document
+    const effectiveDocId = parsedDocIds.length > 0 ? parsedDocIds[0] : documentId;
+    const effectiveDocIds = parsedDocIds.length > 1 ? parsedDocIds : documentIds;
+    const effectiveMessage = cleanedInput || userMessage.trim();
+
     // Check usage limits
     const { allowed } = await checkAndIncrement();
     if (!allowed) {
@@ -190,7 +201,7 @@ export default function ChatInterface({
     setResponseTime(null);
     setTokenCount(null);
     const startTime = performance.now();
-    const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString() };
+    const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString(), mentionedDocs: resolvedMentionedDocs.length > 0 ? resolvedMentionedDocs.map(d => d.reference_tag || d.name) : undefined };
     setMessages((prev) => [...prev, userMsg]);
     let currentSessionId = sessionId;
     if (!currentSessionId) {
