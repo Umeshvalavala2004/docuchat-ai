@@ -68,7 +68,14 @@ const Index = () => {
   const [toolDocId, setToolDocId] = useState<string | undefined>();
   const [toolDocName, setToolDocName] = useState<string | undefined>();
 
-  const handleToolProcess = (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => {
+  const handleDocumentDeletedFromChat = useCallback(() => {
+    setSelectedDocId(null);
+    setSelectedDocName("");
+    setChatSessionId(undefined);
+    setInitialMessages([]);
+    setView("upload");
+  }, []);
+
     setActiveToolType(toolType);
     setToolDocId(documentId);
     setToolText(text);
