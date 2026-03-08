@@ -246,6 +246,14 @@ const Index = () => {
                 <span className="font-medium text-foreground">Settings</span>
               </div>
             )}
+            {view === "search" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Enterprise Search</span>
+              </div>
+            )}
           </div>
 
           {/* Mobile toggle for PDF/Chat */}
