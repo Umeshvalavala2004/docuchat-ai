@@ -286,12 +286,16 @@ export default function Sidebar({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
-            <FileText className="h-4 w-4 text-primary-foreground" />
-          </div>
+          {brandingLogoUrl ? (
+            <img src={brandingLogoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
+              <FileText className="h-4 w-4 text-primary-foreground" />
+            </div>
+          )}
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-foreground tracking-tight">Interface_IQ</span>
-            <span className="text-[9px] text-muted-foreground leading-tight">Powered by Interface_IQ</span>
+            <span className="text-sm font-bold text-foreground tracking-tight">{brandingAppName}</span>
+            <span className="text-[9px] text-muted-foreground leading-tight">{brandingSubtitle}</span>
           </div>
         </div>
         <div className="flex items-center gap-0.5">
