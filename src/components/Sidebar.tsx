@@ -35,6 +35,7 @@ interface SidebarProps {
   onSearchClick?: () => void;
   profileName?: string | null;
   profilePicture?: string | null;
+  usageInfo?: { questionsAsked: number; maxQuestions: number; isPremium: boolean; remaining: number };
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
@@ -86,6 +87,7 @@ export default function Sidebar({
   onSearchClick,
   profileName,
   profilePicture,
+  usageInfo,
 }: SidebarProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
@@ -507,13 +509,24 @@ export default function Sidebar({
           </button>
         )}
         {userRole === "free_user" && (
-          <button onClick={onUpgradeClick} className="flex items-center gap-2 w-full rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors">
-            <Crown className="h-3.5 w-3.5" /><span className="flex-1 text-left">Upgrade to Pro</span><ChevronRight className="h-3 w-3" />
-          </button>
+          <div className="space-y-1.5">
+            <button onClick={onUpgradeClick} className="flex items-center gap-2 w-full rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors">
+              <Crown className="h-3.5 w-3.5" /><span className="flex-1 text-left">Upgrade to Pro</span><ChevronRight className="h-3 w-3" />
+            </button>
+            {usageInfo && (
+              <div className="rounded-lg bg-accent/50 px-3 py-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-muted-foreground">Daily questions</span>
+                  <span className="text-[10px] font-medium text-foreground">{usageInfo.questionsAsked} / {usageInfo.maxQuestions}</span>
+                </div>
+                <Progress value={(usageInfo.questionsAsked / usageInfo.maxQuestions) * 100} className="h-1.5" />
+              </div>
+            )}
+          </div>
         )}
         {userRole === "pro_user" && (
           <div className="flex items-center gap-2 w-full rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <Crown className="h-3.5 w-3.5" /><span>Pro Plan</span>
+            <Crown className="h-3.5 w-3.5" /><span>Pro Plan</span><span className="ml-auto text-[10px] opacity-70">Unlimited</span>
           </div>
         )}
 

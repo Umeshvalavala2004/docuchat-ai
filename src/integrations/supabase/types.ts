@@ -49,6 +49,33 @@ export type Database = {
           },
         ]
       }
+      daily_usage: {
+        Row: {
+          created_at: string
+          id: string
+          questions_asked: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          questions_asked?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          questions_asked?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_activity_logs: {
         Row: {
           action: string
@@ -506,6 +533,7 @@ export type Database = {
     }
     Functions: {
       approve_pro_request: { Args: { _request_id: string }; Returns: undefined }
+      check_and_increment_usage: { Args: { _user_id: string }; Returns: number }
       create_notification: {
         Args: { _message: string; _title: string; _user_id: string }
         Returns: undefined
@@ -521,6 +549,14 @@ export type Database = {
           result_type: string
           snippet: string
           title: string
+        }[]
+      }
+      get_daily_usage: {
+        Args: { _user_id: string }
+        Returns: {
+          is_premium: boolean
+          max_questions: number
+          questions_asked: number
         }[]
       }
       get_user_role: {
