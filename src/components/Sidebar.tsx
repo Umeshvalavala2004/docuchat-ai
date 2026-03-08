@@ -32,6 +32,7 @@ interface SidebarProps {
   selectedDocId: string | null;
   onSelectDocument: (docId: string, docName: string) => void;
   onSelectChatSession: (sessionId: string, docId: string, docName: string) => void;
+  onStartMultiDocChat: (docIds: string[], docNames: string[]) => void;
   onNewUpload: () => void;
   onSignOut: () => void;
   collapsed: boolean;
