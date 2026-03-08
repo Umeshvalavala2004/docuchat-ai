@@ -485,6 +485,26 @@ export default function Sidebar({
         </AnimatePresence>
       </ScrollArea>
 
+      {/* Multi-doc chat bar */}
+      {multiSelectMode && selectedDocIds.size >= 2 && (
+        <div className="border-t border-border px-3 py-2">
+          <Button
+            onClick={() => {
+              const ids = Array.from(selectedDocIds);
+              const names = ids.map(id => documents.find(d => d.id === id)?.name || "Document");
+              onStartMultiDocChat(ids, names);
+              setMultiSelectMode(false);
+              setSelectedDocIds(new Set());
+            }}
+            className="w-full gap-2 rounded-xl h-9 text-xs"
+            size="sm"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Chat with {selectedDocIds.size} documents
+          </Button>
+        </div>
+      )}
+
       {/* User Profile Footer */}
       <div className="border-t border-border p-3">
         <UserProfile user={user} onSignOut={onSignOut} />

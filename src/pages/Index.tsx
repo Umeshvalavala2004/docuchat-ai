@@ -17,6 +17,7 @@ const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [selectedDocName, setSelectedDocName] = useState<string>("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
