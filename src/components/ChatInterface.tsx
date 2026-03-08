@@ -4,9 +4,11 @@ import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, T
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
-import { streamChat, type ChatMessage, type Source, type RetrievalMetrics, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
+import { streamChat, streamChatLocal, type ChatMessage, type Source, type RetrievalMetrics, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
 import { toast } from "sonner";
 import RagDebugPanel from "@/components/RagDebugPanel";
+import { Badge } from "@/components/ui/badge";
+import type { ModelConfig } from "@/hooks/useModelPreference";
 
 interface ChatInterfaceProps {
   documentId: string;
