@@ -1,0 +1,1 @@
+DELETE FROM document_chunks WHERE document_id = 'ec6950c8-b297-460d-912d-44efee461aa4';
