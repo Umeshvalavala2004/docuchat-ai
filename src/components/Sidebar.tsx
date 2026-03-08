@@ -35,6 +35,7 @@ interface SidebarProps {
   onSearchClick?: () => void;
   profileName?: string | null;
   profilePicture?: string | null;
+  usageInfo?: { questionsAsked: number; maxQuestions: number; isPremium: boolean; remaining: number };
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
