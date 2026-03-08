@@ -176,11 +176,11 @@ export default function ChatInterface({
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
-    if (injectedPrompt && !isLoading) {
+    if (injectedPrompt && !isLoading && docStatus === "ready") {
       sendMessage(injectedPrompt);
       onInjectedPromptConsumed?.();
     }
-  }, [injectedPrompt]);
+  }, [injectedPrompt, isLoading, docStatus, onInjectedPromptConsumed]);
 
   useEffect(() => {
     if (messages.length === 0 && documentId && docStatus === "ready") {
