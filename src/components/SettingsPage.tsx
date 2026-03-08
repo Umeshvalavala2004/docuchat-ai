@@ -27,6 +27,31 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
   const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
   const [responseStyle, setResponseStyle] = useState<string>(() => localStorage.getItem("responseStyle") || "Detailed");
+  const [docSettings, setDocSettings] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("docSettings");
+      return saved ? JSON.parse(saved) : {
+        "Show chunk previews in sources": true,
+        "Enable text highlighting": true,
+        "Auto-scroll to citations": true,
+      };
+    } catch {
+      return {
+        "Show chunk previews in sources": true,
+        "Enable text highlighting": true,
+        "Auto-scroll to citations": true,
+      };
+    }
+  });
+
+  const toggleDocSetting = (key: string) => {
+    setDocSettings((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      localStorage.setItem("docSettings", JSON.stringify(updated));
+      toast.success(`${key} ${updated[key] ? "enabled" : "disabled"}`);
+      return updated;
+    });
+  };
 
   const handleResponseStyleChange = (style: string) => {
     setResponseStyle(style);
