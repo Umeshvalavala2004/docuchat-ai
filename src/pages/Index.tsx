@@ -440,6 +440,11 @@ const Index = () => {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Footer */}
+        <div className="border-t border-border px-4 py-1.5 text-center">
+          <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );
