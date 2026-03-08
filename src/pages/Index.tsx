@@ -83,7 +83,7 @@ const Index = () => {
             <FileText className="h-7 w-7 text-primary-foreground animate-pulse" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <p className="text-sm font-semibold text-foreground">Interface_IQ</p>
+            <p className="text-sm font-semibold text-foreground">{branding.appName}</p>
             <p className="text-xs text-muted-foreground">Loading your workspace...</p>
           </div>
           <div className="flex gap-1">
