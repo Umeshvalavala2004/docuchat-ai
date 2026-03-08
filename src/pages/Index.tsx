@@ -24,6 +24,7 @@ const Index = () => {
   const [initialMessages, setInitialMessages] = useState<ChatMessage[] | undefined>();
   const [highlightPage, setHighlightPage] = useState<number | null>(null);
   const [highlightText, setHighlightText] = useState<string | null>(null);
+  const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
 
   if (loading) {
     return (
