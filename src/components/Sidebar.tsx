@@ -48,6 +48,7 @@ interface SidebarProps {
   brandingAppName?: string;
   brandingSubtitle?: string;
   brandingLogoUrl?: string | null;
+  activeWorkspaceId?: string | null;
 }
 
 const sidebarTools = [
