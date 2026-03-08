@@ -278,6 +278,10 @@ const Index = () => {
             </div>
           )}
 
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title="Enterprise Search">
+            <Search className="h-4 w-4" />
+          </Button>
+
           <NotificationBell
             notifications={notifications}
             unreadCount={unreadCount}
