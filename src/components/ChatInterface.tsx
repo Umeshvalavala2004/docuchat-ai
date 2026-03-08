@@ -12,6 +12,8 @@ import type { ModelConfig } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { Progress } from "@/components/ui/progress";
 import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from "@/components/DocumentMentionDropdown";
+import ShareDialog from "@/components/ShareDialog";
+import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ChatInterfaceProps {
