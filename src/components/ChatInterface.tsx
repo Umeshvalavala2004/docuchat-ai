@@ -110,7 +110,7 @@ function ChatSkeleton() {
 
 export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
-  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed,
+  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
