@@ -163,6 +163,7 @@ export default function ChatInterface({
     await streamChat({
       message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
       onSources: (s) => { sources = s; setActiveSources(s); },
+      onMetrics: (m) => { setActiveMetrics(m); },
       onDelta: (chunk) => {
         assistantContent += chunk;
         setMessages((prev) => {
