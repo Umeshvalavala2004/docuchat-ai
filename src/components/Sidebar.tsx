@@ -444,6 +444,22 @@ export default function Sidebar({
                               <button onClick={(e) => { e.stopPropagation(); const tag = prompt("Enter a short reference tag (e.g. project_prd):", doc.reference_tag || ""); if (tag !== null) { setDocumentReferenceTag(doc.id, tag || null).then(cleanTag => { setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, reference_tag: cleanTag } : d)); toast.success(cleanTag ? `Tag set: #${cleanTag}` : "Tag removed"); }).catch(() => toast.error("Failed")); } }} className="p-1 rounded-lg hover:bg-accent" title="Set tag"><Hash className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title={t("rename")}><Pencil className="h-3 w-3 text-muted-foreground" /></button>
                               <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title={t("delete")}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
+                              <span onClick={(e) => e.stopPropagation()}>
+                                <ShareDialog
+                                  type="document"
+                                  name={doc.name}
+                                  shares={shareDocId === doc.id ? docShares.shares : []}
+                                  loading={docShares.loading}
+                                  onAdd={(email, perm) => docShares.addShare(email, perm, user.id)}
+                                  onRemove={docShares.removeShare}
+                                  onUpdatePermission={docShares.updatePermission}
+                                  trigger={
+                                    <button onClick={() => setShareDocId(doc.id)} className="p-1 rounded-lg hover:bg-accent" title="Share">
+                                      <Share2 className="h-3 w-3 text-muted-foreground" />
+                                    </button>
+                                  }
+                                />
+                              </span>
                             </div>
                           )}
                         </motion.div>
