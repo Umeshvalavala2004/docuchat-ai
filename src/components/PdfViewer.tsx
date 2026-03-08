@@ -264,8 +264,14 @@ export default function PdfViewer({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-auto bg-muted/20"
+          className="flex-1 overflow-auto bg-muted/20 relative"
         >
+          {/* Text Selection Toolbar */}
+          {onTextAction && (
+            <TextSelectionToolbar
+              onAction={(action, text) => onTextAction(action, text, currentPage)}
+            />
+          )}
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-3">
