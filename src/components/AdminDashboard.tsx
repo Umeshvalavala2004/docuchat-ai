@@ -37,7 +37,7 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminTab = "overview" | "analytics" | "users" | "requests";
+type AdminTab = "overview" | "analytics" | "users" | "requests" | "branding";
 
 const CHART_COLORS = [
   "hsl(222, 80%, 55%)",
