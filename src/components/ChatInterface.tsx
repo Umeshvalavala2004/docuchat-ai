@@ -15,6 +15,8 @@ import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from
 import ShareDialog from "@/components/ShareDialog";
 import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ChatInterfaceProps {
   documentId: string;
@@ -121,6 +123,8 @@ export default function ChatInterface({
   initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId, onDocumentDeleted,
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
+  const { profile } = useProfile(userId);
+  const userInitials = (profile?.name || profile?.email || "U").slice(0, 2).toUpperCase();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -517,9 +521,21 @@ export default function ChatInterface({
                   </div>
                 </div>
                 {msg.role === "user" && (
-                  <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent border border-border">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+                    className="mt-1 shrink-0"
+                  >
+                    <Avatar className="h-9 w-9 rounded-xl border border-border shadow-sm">
+                      {profile?.profile_picture ? (
+                        <AvatarImage src={profile.profile_picture} alt="You" className="rounded-xl object-cover" />
+                      ) : null}
+                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-xs font-bold">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.div>
                 )}
               </motion.div>
             ))}
