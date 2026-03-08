@@ -373,6 +373,26 @@ export async function getKeyPoints(documentId: string): Promise<string[]> {
   }
 }
 
+export async function moveDocumentToWorkspace(documentId: string, workspaceId: string) {
+  const { error } = await supabase
+    .from("documents")
+    .update({ workspace_id: workspaceId })
+    .eq("id", documentId);
+  if (error) throw error;
+}
+
+export async function checkDuplicateDocument(userId: string, fileName: string, workspaceId?: string): Promise<any | null> {
+  let query = supabase
+    .from("documents")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("name", fileName);
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query.limit(1);
+  if (error) throw error;
+  return data && data.length > 0 ? data[0] : null;
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

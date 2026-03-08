@@ -16,7 +16,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { uploadDocument } from "@/lib/api";
+import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
 
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
@@ -63,6 +63,18 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
       toast.error("Unsupported file type. Please upload PDF, DOCX, or TXT.");
       return;
     }
+    // Check for duplicate
+    try {
+      const existing = await checkDuplicateDocument(userId, file.name, workspaceId || undefined);
+      if (existing) {
+        toast.info(`"${file.name}" already exists in this workspace. Opening it now.`, { duration: 4000 });
+        onDocumentUploaded(existing);
+        return;
+      }
+    } catch (e) {
+      console.error("Duplicate check failed:", e);
+    }
+
     setUploading(true);
     try {
       const doc = await uploadDocument(file, userId, workspaceId || undefined);
