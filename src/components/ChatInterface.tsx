@@ -398,6 +398,31 @@ export default function ChatInterface({
         />
       )}
 
+      {/* Usage limit banner */}
+      {!usage.isPremium && usage.remaining === 0 && (
+        <div className="border-t border-destructive/20 bg-destructive/5 px-4 py-3">
+          <div className="mx-auto max-w-3xl flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+              <Timer className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-destructive">Daily limit reached</p>
+              <p className="text-[11px] text-muted-foreground">You've used all 5 free questions today. Upgrade to Premium for unlimited access.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Usage indicator for free users */}
+      {!usage.isPremium && usage.remaining > 0 && (
+        <div className="border-t border-border/50 px-4 py-1.5 bg-card/30">
+          <div className="mx-auto max-w-3xl flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground">{usage.remaining} question{usage.remaining !== 1 ? "s" : ""} remaining today</span>
+            <Progress value={(usage.questionsAsked / usage.maxQuestions) * 100} className="h-1 flex-1 max-w-[100px]" />
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t border-border glass p-4">
         <div className="mx-auto max-w-3xl">
