@@ -151,6 +151,14 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Handle injected prompts from text selection toolbar
+  useEffect(() => {
+    if (injectedPrompt && !isLoading) {
+      sendMessage(injectedPrompt);
+      onInjectedPromptConsumed?.();
+    }
+  }, [injectedPrompt]);
+
   // Load suggested questions + key points for new chats
   useEffect(() => {
     if (messages.length === 0 && documentId) {
