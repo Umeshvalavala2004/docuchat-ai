@@ -7,7 +7,7 @@ import {
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
   ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
   Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench, Shield,
-  Star, Pin, Hash,
+  Star, Pin, Hash, Share2, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
