@@ -357,15 +357,24 @@ const Index = () => {
 
           {/* Desktop toggle for PDF panel */}
           {!isMobile && showSplitView && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-lg"
-              onClick={() => setPdfPanelOpen(!pdfPanelOpen)}
-              title={pdfPanelOpen ? "Hide PDF" : "Show PDF"}
-            >
-              {pdfPanelOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 rounded-lg border-border/50 px-2.5 text-xs font-medium"
+                    onClick={() => setPdfPanelOpen(!pdfPanelOpen)}
+                  >
+                    {pdfPanelOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
+                    <span className="hidden sm:inline">{pdfPanelOpen ? "Hide PDF" : "Show PDF"}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {pdfPanelOpen ? "Hide PDF viewer" : "Show PDF viewer"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           {!sidebarCollapsed ? null : (
