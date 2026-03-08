@@ -278,9 +278,10 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                           {(profile?.name || profile?.email || "U")[0]?.toUpperCase()}
                         </div>
                       )}
-                      <button className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors shadow-sm">
-                        <Camera className="h-3 w-3 text-muted-foreground" />
-                      </button>
+                      <label className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors shadow-sm cursor-pointer">
+                        {uploadingPic ? <Loader2 className="h-3 w-3 text-muted-foreground animate-spin" /> : <Camera className="h-3 w-3 text-muted-foreground" />}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleProfilePicUpload} disabled={uploadingPic} />
+                      </label>
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{profile?.name || "No name set"}</p>
