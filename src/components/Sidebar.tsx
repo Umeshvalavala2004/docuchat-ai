@@ -17,6 +17,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
 import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import ImportantLinks from "@/components/ImportantLinks";
+import QuickQuestions from "@/components/QuickQuestions";
 import type { User } from "@supabase/supabase-js";
 
 interface SidebarProps {
