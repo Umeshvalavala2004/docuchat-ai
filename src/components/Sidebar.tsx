@@ -431,8 +431,11 @@ export default function Sidebar({
                     {filteredDocs.map((doc) => {
                       const status = statusConfig[doc.status] || statusConfig.pending;
                       const isActive = multiSelectMode ? selectedDocIds.has(doc.id) : selectedDocId === doc.id;
+                      const otherWorkspaces = workspaces.filter((w) => w.id !== activeWorkspaceId);
                       return (
-                        <motion.div key={doc.id} layout className={`group rounded-xl transition-all ${isActive ? "bg-primary/8 ring-1 ring-primary/20" : doc.status === "ready" ? "hover:bg-accent/70" : "opacity-60"}`}>
+                        <ContextMenu key={doc.id}>
+                          <ContextMenuTrigger asChild>
+                        <motion.div layout className={`group rounded-xl transition-all ${isActive ? "bg-primary/8 ring-1 ring-primary/20" : doc.status === "ready" ? "hover:bg-accent/70" : "opacity-60"}`}>
                           <button
                             onClick={() => {
                               if (multiSelectMode && doc.status === "ready") {
@@ -498,6 +501,43 @@ export default function Sidebar({
                             </div>
                           )}
                         </motion.div>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem onClick={() => { setRenamingId(doc.id); setRenameValue(doc.name); }}>
+                              <Pencil className="h-3.5 w-3.5 mr-2" /> {t("rename")}
+                            </ContextMenuItem>
+                            <ContextMenuItem onClick={(e: any) => handleDelete(doc.id, e)}>
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> {t("delete")}
+                            </ContextMenuItem>
+                            {otherWorkspaces.length > 0 && (
+                              <>
+                                <ContextMenuSeparator />
+                                <ContextMenuSub>
+                                  <ContextMenuSubTrigger>
+                                    <ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Move to workspace
+                                  </ContextMenuSubTrigger>
+                                  <ContextMenuSubContent>
+                                    {otherWorkspaces.map((ws) => (
+                                      <ContextMenuItem
+                                        key={ws.id}
+                                        onClick={async () => {
+                                          try {
+                                            await moveDocumentToWorkspace(doc.id, ws.id);
+                                            setDocuments(prev => prev.filter(d => d.id !== doc.id));
+                                            toast.success(`Moved "${doc.name}" to ${ws.name}`);
+                                          } catch { toast.error("Failed to move document"); }
+                                        }}
+                                      >
+                                        <span className="h-2.5 w-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: ws.color || "hsl(var(--primary))" }} />
+                                        {ws.name}
+                                      </ContextMenuItem>
+                                    ))}
+                                  </ContextMenuSubContent>
+                                </ContextMenuSub>
+                              </>
+                            )}
+                          </ContextMenuContent>
+                        </ContextMenu>
                       );
                     })}
                   </div>
