@@ -314,7 +314,14 @@ export default function ChatInterface({
       {/* RAG Debug Panel */}
       {activeSources.length > 0 && (
         <RagDebugPanel
-          debugInfo={{ sources: activeSources, modelUsed: "Gemini 3 Flash" }}
+          debugInfo={{
+            sources: activeSources,
+            modelUsed: "Gemini 3 Flash",
+            totalChunksSearched: activeMetrics?.totalCandidates,
+            processingTimeMs: activeMetrics?.retrievalTimeMs,
+            searchMethods: activeMetrics?.searchMethods,
+            reranked: activeMetrics?.reranked,
+          }}
           onCitationClick={onCitationClick}
           documentName={documentName}
         />
