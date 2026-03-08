@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
+import TestimonialCarousel from "@/components/TestimonialCarousel";
 
 
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
