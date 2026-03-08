@@ -6,6 +6,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useModelPreference } from "@/hooks/useModelPreference";
+import { useDailyUsage } from "@/hooks/useDailyUsage";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
