@@ -363,6 +363,10 @@ const Index = () => {
                   onClose={() => setView("upload")}
                 />
               </motion.div>
+            ) : view === "dashboard" ? (
+              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <UserDashboard userId={user.id} userName={profile?.name} />
+              </motion.div>
             ) : view === "tools" ? (
               <motion.div key="tools" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <ToolsDashboard userId={user.id} onBack={() => setView("upload")} />
