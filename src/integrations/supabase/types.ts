@@ -862,6 +862,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_change_user_role: {
+        Args: {
+          _new_role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
       approve_pro_request: { Args: { _request_id: string }; Returns: undefined }
       check_and_increment_usage: { Args: { _user_id: string }; Returns: number }
       create_notification: {

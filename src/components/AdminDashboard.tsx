@@ -63,6 +63,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -227,6 +228,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       await loadData();
     } catch (e: any) { toast.error(e.message || "Failed to reject"); }
     setProcessing(null);
+  };
+
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    setChangingRole(userId);
+    try {
+      const { error } = await supabase.rpc("admin_change_user_role", {
+        _target_user_id: userId,
+        _new_role: newRole as "free_user" | "pro_user" | "admin",
+      });
+      if (error) throw error;
+      toast.success(`Role updated to ${newRole.replace("_", " ")}`);
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to change role");
+    }
+    setChangingRole(null);
   };
 
   const filteredRequests = requests.filter((r) => filter === "all" ? true : r.status === filter);
@@ -523,15 +540,21 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           </td>
                           <td className="px-4 py-3"><span className="capitalize text-muted-foreground">{u.provider}</span></td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium capitalize ${
-                              u.role === "admin" ? "bg-primary/10 text-primary" :
-                              u.role === "pro_user" ? "bg-amber-500/10 text-amber-600" :
-                              "bg-accent text-muted-foreground"
-                            }`}>
-                              {u.role === "pro_user" && <Crown className="h-2.5 w-2.5" />}
-                              {u.role === "admin" && <Shield className="h-2.5 w-2.5" />}
-                              {u.role?.replace("_", " ")}
-                            </span>
+                            <select
+                              value={u.role || "free_user"}
+                              onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                              disabled={changingRole === u.id}
+                              className={`text-xs font-medium rounded-lg border border-border bg-background px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
+                                u.role === "admin" ? "text-primary" :
+                                u.role === "pro_user" ? "text-amber-600" :
+                                "text-muted-foreground"
+                              }`}
+                            >
+                              <option value="free_user">Free User</option>
+                              <option value="pro_user">Pro User</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            {changingRole === u.id && <Loader2 className="inline ml-1.5 h-3 w-3 animate-spin text-primary" />}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{u.doc_count}</td>
                           <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
