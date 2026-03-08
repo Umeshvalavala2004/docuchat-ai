@@ -148,6 +148,37 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   useEffect(() => { loadData(); }, []);
 
+  // Sync brand form when branding loads
+  useEffect(() => {
+    if (!brandInitialized && branding.appName) {
+      setBrandForm({
+        appName: branding.appName,
+        subtitle: branding.subtitle,
+        copyrightYear: branding.copyrightYear,
+        copyrightText: branding.copyrightText,
+        logoUrl: branding.logoUrl || "",
+      });
+      setBrandInitialized(true);
+    }
+  }, [branding, brandInitialized]);
+
+  const handleSaveBranding = async () => {
+    setBrandSaving(true);
+    try {
+      await updateBranding({
+        appName: brandForm.appName,
+        subtitle: brandForm.subtitle,
+        copyrightYear: brandForm.copyrightYear,
+        copyrightText: brandForm.copyrightText,
+        logoUrl: brandForm.logoUrl || null,
+      });
+      toast.success("Branding updated! Changes will appear across the app.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save branding");
+    }
+    setBrandSaving(false);
+  };
+
   const handleApprove = async (requestId: string) => {
     setProcessing(requestId);
     try {
