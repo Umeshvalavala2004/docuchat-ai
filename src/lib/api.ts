@@ -259,12 +259,14 @@ export async function uploadDocument(file: File, userId: string, workspaceId?: s
   return doc;
 }
 
-export async function getUserDocuments(userId: string) {
-  const { data, error } = await supabase
+export async function getUserDocuments(userId: string, workspaceId?: string) {
+  let query = supabase
     .from("documents")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
