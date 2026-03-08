@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools";
+type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools" | "tool_results";
 
 const Index = () => {
   const { t } = useTranslation();
