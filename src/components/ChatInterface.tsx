@@ -113,6 +113,7 @@ export default function ChatInterface({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeSources, setActiveSources] = useState<Source[]>([]);
+  const [activeMetrics, setActiveMetrics] = useState<RetrievalMetrics | null>(null);
   const [sessionId, setSessionId] = useState(chatSessionId);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
