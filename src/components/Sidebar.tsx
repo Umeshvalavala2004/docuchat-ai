@@ -124,7 +124,7 @@ export default function Sidebar({
 
   const loadDocuments = async () => {
     try {
-      const docs = await getUserDocuments(user.id);
+      const docs = await getUserDocuments(user.id, activeWorkspaceId || undefined);
       setDocuments(docs);
     } catch (e) {
       console.error("Failed to load documents:", e);
@@ -135,7 +135,7 @@ export default function Sidebar({
 
   const loadHistory = async () => {
     try {
-      const sessions = await getChatSessions(user.id);
+      const sessions = await getChatSessions(user.id, activeWorkspaceId || undefined);
       setChatSessions(sessions);
     } catch (e) {
       console.error("Failed to load history:", e);
