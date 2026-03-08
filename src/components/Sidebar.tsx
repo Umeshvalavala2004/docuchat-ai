@@ -761,12 +761,16 @@ export default function Sidebar({
 
         {/* User info */}
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-[10px] font-bold shadow-sm">
-            {initials}
-          </div>
+          {profilePicture ? (
+            <img src={profilePicture} className="h-8 w-8 shrink-0 rounded-full object-cover shadow-sm" alt="" />
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-[10px] font-bold shadow-sm">
+              {initials}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="truncate text-xs font-medium text-foreground">
-              {user.email?.split("@")[0]}
+              {profileName || user.email?.split("@")[0]}
             </p>
             <p className="truncate text-[10px] text-muted-foreground capitalize">
               {userRole === "admin" ? "Administrator" : userRole === "pro_user" ? "Pro Plan" : "Free Plan"}
