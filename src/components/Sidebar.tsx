@@ -7,6 +7,7 @@ import {
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
   ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
   Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench, Shield,
+  Star, Pin, Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
+import { toggleDocumentFavorite, toggleDocumentPinned, setDocumentReferenceTag } from "@/lib/documentActions";
 import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
