@@ -213,7 +213,7 @@ export default function ChatInterface({
     let currentSessionId = sessionId;
     if (!currentSessionId) {
       try {
-        const session = await createChatSession(userId, documentId, userMessage.slice(0, 50));
+        const session = await createChatSession(userId, documentId, userMessage.slice(0, 50), workspaceId || undefined);
         currentSessionId = session.id;
         setSessionId(session.id);
         onChatSessionCreated?.(session.id);
