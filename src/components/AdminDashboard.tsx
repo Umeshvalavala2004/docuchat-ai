@@ -70,6 +70,68 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [changingRole, setChangingRole] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  const filteredUsers = users.filter((u) => {
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    return (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
+  });
+
+  const selectableUsers = filteredUsers.filter((u) => u.role !== "admin");
+  const allSelectableSelected = selectableUsers.length > 0 && selectableUsers.every((u) => selectedUsers.has(u.id));
+
+  const toggleSelectUser = (id: string) => {
+    setSelectedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelectableSelected) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(selectableUsers.map((u) => u.id)));
+    }
+  };
+
+  const handleBulkRoleChange = async (newRole: string) => {
+    if (selectedUsers.size === 0) return;
+    setBulkProcessing(true);
+    let success = 0;
+    for (const userId of selectedUsers) {
+      try {
+        const { error } = await supabase.rpc("admin_change_user_role", {
+          _target_user_id: userId,
+          _new_role: newRole as "free_user" | "pro_user" | "admin",
+        });
+        if (!error) success++;
+      } catch {}
+    }
+    toast.success(`Updated ${success} user(s) to ${newRole.replace("_", " ")}`);
+    setSelectedUsers(new Set());
+    await loadData();
+    setBulkProcessing(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.size === 0) return;
+    setBulkProcessing(true);
+    let success = 0;
+    for (const userId of selectedUsers) {
+      try {
+        const res = await supabase.functions.invoke("delete-user", { body: { target_user_id: userId } });
+        if (!res.error && !res.data?.error) success++;
+      } catch {}
+    }
+    toast.success(`Deleted ${success} user(s)`);
+    setSelectedUsers(new Set());
+    await loadData();
+    setBulkProcessing(false);
+  };
 
   const handleDeleteUser = async (userId: string) => {
     setDeletingUser(userId);
