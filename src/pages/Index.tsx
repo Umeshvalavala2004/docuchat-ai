@@ -495,6 +495,7 @@ const Index = () => {
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                           modelConfig={activeModel}
                           workspaceId={activeWorkspaceId}
+                          onDocumentDeleted={handleDocumentDeletedFromChat}
                         />
                       </div>
                     </ResizablePanel>
