@@ -15,6 +15,8 @@ import DocumentMentionDropdown, { parseMentions, type MentionableDocument } from
 import ShareDialog from "@/components/ShareDialog";
 import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ChatInterfaceProps {
   documentId: string;
