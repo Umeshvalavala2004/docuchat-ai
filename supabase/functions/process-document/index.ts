@@ -6,11 +6,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function extractTextFromPDFWithUnpdf(bytes: Uint8Array): Promise<string> {
-  const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
-  const doc = await getDocumentProxy(new Uint8Array(bytes));
-  const { text } = await extractText(doc, { mergePages: true });
-  return text;
+async function extractTextFromPDFWithUnpdf(bytes: Uint8Array): Promise<{ text: string; quality: "good" | "poor" }> {
+  try {
+    const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
+    const doc = await getDocumentProxy(new Uint8Array(bytes));
+    const { text } = await extractText(doc, { mergePages: true });
+    const hasGoodText = text.length > 500 && (text.match(/[a-zA-Z]/g) || []).length > 100;
+    return { text, quality: hasGoodText ? "good" : "poor" };
+  } catch (e) {
+    console.error("unpdf extraction failed:", e);
+    return { text: "", quality: "poor" };
+  }
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function extractTextWithVisionAPI(pdfBytes: Uint8Array, apiKey: string): Promise<string> {
+  console.log("Falling back to Vision API for scanned PDF...");
+  const base64Pdf = arrayBufferToBase64(pdfBytes.buffer);
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extract ALL text from this PDF document. Return only the extracted text content, preserving paragraphs and structure. Do not add any commentary." },
+            { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64Pdf}` } },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error("Vision API error:", err);
+    throw new Error("Vision API extraction failed");
+  }
+
+  const result = await response.json();
+  return result.choices?.[0]?.message?.content || "";
 }
 
 function cleanText(text: string): string {
