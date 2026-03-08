@@ -502,12 +502,35 @@ export default function Sidebar({
             {toolsOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                 <div className="space-y-0.5 py-0.5 px-1">
+                  <button onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
+                    <Sparkles className="h-3.5 w-3.5" /> Open All Tools
+                  </button>
                   {tools.map((tool) => (
-                    <button key={tool.id} onClick={() => toast.info(`${tool.label} coming soon!`)} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
+                    <button key={tool.id} onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
                       <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{tool.label}
                     </button>
                   ))}
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* IMPORTANT LINKS */}
+          <SectionHeader label="Important Links" icon={<Link2 className="h-3.5 w-3.5" />} open={linksOpen} onToggle={() => setLinksOpen(!linksOpen)} />
+          <AnimatePresence initial={false}>
+            {linksOpen && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                <ImportantLinks userId={user.id} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* QUICK QUESTIONS */}
+          <SectionHeader label="Quick Questions" icon={<Zap className="h-3.5 w-3.5" />} open={quickQOpen} onToggle={() => setQuickQOpen(!quickQOpen)} />
+          <AnimatePresence initial={false}>
+            {quickQOpen && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                <QuickQuestions userId={user.id} onInsertPrompt={onInsertPrompt || (() => {})} />
               </motion.div>
             )}
           </AnimatePresence>
