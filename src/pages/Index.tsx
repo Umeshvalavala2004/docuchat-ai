@@ -483,18 +483,22 @@ const Index = () => {
                   )
                 ) : (
                   <ResizablePanelGroup direction="horizontal" className="flex-1">
-                    <ResizablePanel defaultSize={55} minSize={30}>
-                      <PdfViewer
-                        documentId={selectedDocId}
-                        fileName={selectedDocName}
-                        highlightPage={highlightPage}
-                        highlightText={highlightText}
-                        inline={true}
-                        onTextAction={handleTextAction}
-                      />
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={45} minSize={25}>
+                    {pdfPanelOpen && (
+                      <>
+                        <ResizablePanel defaultSize={55} minSize={30}>
+                          <PdfViewer
+                            documentId={selectedDocId}
+                            fileName={selectedDocName}
+                            highlightPage={highlightPage}
+                            highlightText={highlightText}
+                            inline={true}
+                            onTextAction={handleTextAction}
+                          />
+                        </ResizablePanel>
+                        <ResizableHandle withHandle />
+                      </>
+                    )}
+                    <ResizablePanel defaultSize={pdfPanelOpen ? 45 : 100} minSize={25}>
                       <div className="flex flex-col h-full">
                         <ChatInterface
                           key={`${selectedDocId}-${chatSessionId}`}
