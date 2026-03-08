@@ -26,6 +26,16 @@ const Index = () => {
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
 
+  const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
+    const prompts: Record<TextAction, string> = {
+      explain: `Explain the following text from the document (page ${pageNumber}) in simple terms:\n\n"${text}"`,
+      summarize: `Summarize the following text from the document (page ${pageNumber}):\n\n"${text}"`,
+      rewrite: `Rewrite the following text from the document (page ${pageNumber}) in clearer language:\n\n"${text}"`,
+      ask: text,
+    };
+    setInjectedPrompt(prompts[action]);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
