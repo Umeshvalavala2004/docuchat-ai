@@ -479,6 +479,7 @@ const Index = () => {
                           injectedPrompt={injectedPrompt}
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                           modelConfig={activeModel}
+                          workspaceId={activeWorkspaceId}
                         />
                       </div>
                     </ResizablePanel>
