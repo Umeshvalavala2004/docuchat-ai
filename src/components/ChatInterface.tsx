@@ -29,6 +29,7 @@ interface ChatInterfaceProps {
   onInjectedPromptConsumed?: () => void;
   modelConfig?: ModelConfig;
   workspaceId?: string | null;
+  onDocumentDeleted?: () => void;
 }
 
 function CopyButton({ text }: { text: string }) {
