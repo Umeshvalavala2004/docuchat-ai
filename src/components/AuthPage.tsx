@@ -77,7 +77,10 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
               <FileText className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">DocChat AI</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground tracking-tight">Interface_IQ</span>
+              <span className="text-[10px] text-muted-foreground">Powered by Interface_IQ</span>
+            </div>
           </div>
         </div>
         <div>
@@ -107,7 +110,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             ))}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 DocChat AI. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
       </div>
 
       {/* Right panel - form */}
@@ -126,8 +129,8 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
               <FileText className="h-7 w-7 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">DocChat AI</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Chat with your documents using AI</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Interface_IQ</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Powered by Interface_IQ</p>
           </div>
 
           <div className="mb-6">
@@ -286,6 +289,10 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
             )}
           </div>
         </motion.div>
+      </div>
+      {/* Footer */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
       </div>
     </div>
   );

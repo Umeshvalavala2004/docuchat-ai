@@ -81,7 +81,7 @@ const Index = () => {
             <FileText className="h-7 w-7 text-primary-foreground animate-pulse" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <p className="text-sm font-semibold text-foreground">DocChat AI</p>
+            <p className="text-sm font-semibold text-foreground">Interface_IQ</p>
             <p className="text-xs text-muted-foreground">Loading your workspace...</p>
           </div>
           <div className="flex gap-1">
@@ -439,6 +439,11 @@ const Index = () => {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-border px-4 py-1.5 text-center">
+          <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
         </div>
       </div>
     </div>

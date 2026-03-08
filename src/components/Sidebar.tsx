@@ -283,7 +283,10 @@ export default function Sidebar({
           <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
             <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-sm font-bold text-foreground tracking-tight">DocChat AI</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-foreground tracking-tight">Interface_IQ</span>
+            <span className="text-[9px] text-muted-foreground leading-tight">Powered by Interface_IQ</span>
+          </div>
         </div>
         <div className="flex items-center gap-0.5">
           <DarkModeToggle />
