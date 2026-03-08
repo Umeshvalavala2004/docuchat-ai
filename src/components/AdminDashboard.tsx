@@ -68,6 +68,25 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingUser(userId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await supabase.functions.invoke("delete-user", {
+        body: { target_user_id: userId },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success("User deleted successfully");
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete user");
+    }
+    setDeletingUser(null);
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
