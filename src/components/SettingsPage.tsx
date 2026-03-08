@@ -27,6 +27,31 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
   const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
   const [responseStyle, setResponseStyle] = useState<string>(() => localStorage.getItem("responseStyle") || "Detailed");
+  const [docSettings, setDocSettings] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("docSettings");
+      return saved ? JSON.parse(saved) : {
+        "Show chunk previews in sources": true,
+        "Enable text highlighting": true,
+        "Auto-scroll to citations": true,
+      };
+    } catch {
+      return {
+        "Show chunk previews in sources": true,
+        "Enable text highlighting": true,
+        "Auto-scroll to citations": true,
+      };
+    }
+  });
+
+  const toggleDocSetting = (key: string) => {
+    setDocSettings((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      localStorage.setItem("docSettings", JSON.stringify(updated));
+      toast.success(`${key} ${updated[key] ? "enabled" : "disabled"}`);
+      return updated;
+    });
+  };
 
   const handleResponseStyleChange = (style: string) => {
     setResponseStyle(style);
@@ -255,9 +280,12 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                     ].map((label) => (
                       <div key={label} className="flex items-center justify-between">
                         <span className="text-xs text-foreground">{label}</span>
-                        <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer">
-                          <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm" />
-                        </div>
+                        <button
+                          onClick={() => toggleDocSetting(label)}
+                          className={`h-5 w-9 rounded-full relative cursor-pointer transition-colors ${docSettings[label] ? "bg-primary" : "bg-muted"}`}
+                        >
+                          <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm transition-all ${docSettings[label] ? "right-0.5" : "left-0.5"}`} />
+                        </button>
                       </div>
                     ))}
                   </div>
