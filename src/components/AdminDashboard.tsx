@@ -58,6 +58,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const { branding, updateBranding, refetch: refetchBranding } = useBranding();
+  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "" });
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandInitialized, setBrandInitialized] = useState(false);
 
   const [stats, setStats] = useState({
     totalUsers: 0, freeUsers: 0, proUsers: 0, adminUsers: 0,
