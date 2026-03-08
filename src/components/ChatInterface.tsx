@@ -679,7 +679,7 @@ export default function ChatInterface({
                 handleKeyDown(e);
               }}
               placeholder="Ask a question... Type # to mention a document"
-              className="min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="min-h-[40px] sm:min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-1.5 sm:p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
             <Button size="icon" onClick={send} disabled={!input.trim() || isLoading || (docStatus !== "ready" && docStatus !== "error")} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
