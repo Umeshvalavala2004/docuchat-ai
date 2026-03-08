@@ -24,7 +24,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
-    const { message, documentId, documentIds, chatSessionId, history, modelId } = await req.json();
+    const { message, documentId, documentIds, chatSessionId, history, modelId, responseStyle } = await req.json();
     if (!message) throw new Error("message is required");
 
     const docIds: string[] = documentIds || (documentId ? [documentId] : []);
