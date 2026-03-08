@@ -87,6 +87,7 @@ export default function Sidebar({
   onSearchClick,
   profileName,
   profilePicture,
+  usageInfo,
 }: SidebarProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
