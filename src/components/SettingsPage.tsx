@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, User, Palette, MessageSquare, FileText, Shield, Sun, Moon, Monitor, Camera, Save, Loader2, Cpu, Info } from "lucide-react";
+import { ChevronLeft, User, Palette, MessageSquare, FileText, Shield, Sun, Moon, Monitor, Camera, Save, Loader2, Cpu, Info, Languages } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,14 +36,28 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
         "Show chunk previews in sources": true,
         "Enable text highlighting": true,
         "Auto-scroll to citations": true,
+        "Enable OCR for scanned PDFs": true,
+        "Show page numbers in chunks": true,
       };
     } catch {
       return {
         "Show chunk previews in sources": true,
         "Enable text highlighting": true,
         "Auto-scroll to citations": true,
+        "Enable OCR for scanned PDFs": true,
+        "Show page numbers in chunks": true,
       };
     }
+  });
+
+  const [chunkSize, setChunkSize] = useState<number>(() => {
+    return parseInt(localStorage.getItem("chunkSize") || "500", 10);
+  });
+  const [chunkOverlap, setChunkOverlap] = useState<number>(() => {
+    return parseInt(localStorage.getItem("chunkOverlap") || "100", 10);
+  });
+  const [ocrLanguage, setOcrLanguage] = useState<string>(() => {
+    return localStorage.getItem("ocrLanguage") || "auto";
   });
 
   const toggleDocSetting = (key: string) => {
@@ -51,6 +67,22 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
       toast.success(`${key} ${updated[key] ? "enabled" : "disabled"}`);
       return updated;
     });
+  };
+
+  const handleChunkSizeChange = (value: number[]) => {
+    setChunkSize(value[0]);
+    localStorage.setItem("chunkSize", value[0].toString());
+  };
+
+  const handleChunkOverlapChange = (value: number[]) => {
+    setChunkOverlap(value[0]);
+    localStorage.setItem("chunkOverlap", value[0].toString());
+  };
+
+  const handleOcrLanguageChange = (value: string) => {
+    setOcrLanguage(value);
+    localStorage.setItem("ocrLanguage", value);
+    toast.success(`OCR language set to ${value === "auto" ? "Auto-detect" : value.toUpperCase()}`);
   };
 
   const handleResponseStyleChange = (style: string) => {
@@ -277,6 +309,8 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                       "Show chunk previews in sources",
                       "Enable text highlighting",
                       "Auto-scroll to citations",
+                      "Enable OCR for scanned PDFs",
+                      "Show page numbers in chunks",
                     ].map((label) => (
                       <div key={label} className="flex items-center justify-between">
                         <span className="text-xs text-foreground">{label}</span>
@@ -288,6 +322,71 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                         </button>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Chunking Settings</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Control how documents are split into chunks for AI processing</p>
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium">Chunk Size (tokens)</Label>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">{chunkSize}</span>
+                      </div>
+                      <Slider
+                        value={[chunkSize]}
+                        onValueChange={handleChunkSizeChange}
+                        min={200}
+                        max={2000}
+                        step={50}
+                        className="w-full"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Smaller chunks = more precise results. Larger chunks = more context per result.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium">Chunk Overlap (tokens)</Label>
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">{chunkOverlap}</span>
+                      </div>
+                      <Slider
+                        value={[chunkOverlap]}
+                        onValueChange={handleChunkOverlapChange}
+                        min={0}
+                        max={500}
+                        step={25}
+                        className="w-full"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Overlap helps preserve context between chunks. Higher overlap = fewer gaps.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">OCR Settings</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Configure optical character recognition for scanned documents</p>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium flex items-center gap-1.5">
+                      <Languages className="h-3.5 w-3.5" />
+                      OCR Language
+                    </Label>
+                    <Select value={ocrLanguage} onValueChange={handleOcrLanguageChange}>
+                      <SelectTrigger className="rounded-xl h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto-detect</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="ar">Arabic</SelectItem>
+                        <SelectItem value="zh">Chinese</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="de">German</SelectItem>
+                        <SelectItem value="hi">Hindi</SelectItem>
+                        <SelectItem value="ja">Japanese</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground">Choose the primary language of your scanned documents for better OCR accuracy.</p>
                   </div>
                 </div>
               </motion.div>
