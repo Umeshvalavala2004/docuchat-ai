@@ -26,6 +26,13 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
   const [tab, setTab] = useState<Tab>("general");
   const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
+  const [responseStyle, setResponseStyle] = useState<string>(() => localStorage.getItem("responseStyle") || "Detailed");
+
+  const handleResponseStyleChange = (style: string) => {
+    setResponseStyle(style);
+    localStorage.setItem("responseStyle", style);
+    toast.success(`Response style set to ${style}`);
+  };
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
     const saved = localStorage.getItem("theme");
