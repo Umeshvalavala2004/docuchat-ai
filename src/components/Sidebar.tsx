@@ -348,9 +348,18 @@ export default function Sidebar({
       </div>
 
       {/* Workspace Switcher */}
-      <div className="px-3 pt-2">
-        <WorkspaceSwitcherInSidebar userId={user.id} activeWorkspaceId={activeWorkspaceId} />
-      </div>
+      {onSwitchWorkspace && onCreateWorkspace && onRenameWorkspace && onDeleteWorkspace && (
+        <div className="px-3 pt-2">
+          <WorkspaceSwitcher
+            workspaces={workspaces}
+            activeWorkspace={activeWorkspace}
+            onSwitch={onSwitchWorkspace}
+            onCreate={onCreateWorkspace}
+            onRename={onRenameWorkspace}
+            onDelete={onDeleteWorkspace}
+          />
+        </div>
+      )}
 
       {/* New Chat Button */}
       <div className="px-3 pt-2 pb-2">
