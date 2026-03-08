@@ -110,6 +110,7 @@ export async function streamChat({
           const parsed = JSON.parse(jsonStr);
           if (parsed.sources && !sourcesReceived) {
             onSources(parsed.sources);
+            if (parsed.retrievalMetrics) onMetrics?.(parsed.retrievalMetrics);
             sourcesReceived = true;
             continue;
           }
