@@ -133,11 +133,11 @@ export default function ToolResults({ toolType, documentId, text, documentName, 
       className="flex flex-1 flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/50">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 glass-card">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className={`h-8 w-8 rounded-lg bg-accent flex items-center justify-center ${meta.color}`}>
+        <div className={`h-8 w-8 rounded-xl gradient-subtle flex items-center justify-center ${meta.color}`}>
           {meta.icon}
         </div>
         <div className="flex-1 min-w-0">

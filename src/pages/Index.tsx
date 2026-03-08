@@ -226,7 +226,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Top bar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border glass z-10">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 glass-strong z-10">
           {(isMobile && sidebarCollapsed) && (
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setSidebarCollapsed(false)}>
               <PanelLeftOpen className="h-4 w-4" />
