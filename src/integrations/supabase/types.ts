@@ -312,6 +312,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_pro_request: { Args: { _request_id: string }; Returns: undefined }
+      create_notification: {
+        Args: { _message: string; _title: string; _user_id: string }
+        Returns: undefined
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -342,6 +347,8 @@ export type Database = {
           similarity: number
         }[]
       }
+      reject_pro_request: { Args: { _request_id: string }; Returns: undefined }
+      request_pro_upgrade: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "free_user" | "pro_user" | "admin"
