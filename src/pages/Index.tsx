@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import AuthPage from "@/components/AuthPage";
@@ -9,6 +9,7 @@ import PdfViewer from "@/components/PdfViewer";
 import { FileText, Upload, Layers } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import type { Source, ChatMessage } from "@/lib/api";
+import type { TextAction } from "@/components/TextSelectionToolbar";
 
 type View = "upload" | "chat";
 
