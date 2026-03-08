@@ -197,7 +197,7 @@ const Index = () => {
         <AnimatePresence>
           {showPdfViewer && selectedDocId && (
             <PdfViewer
-              filePath={`${user.id}/${selectedDocId}`}
+              documentId={selectedDocId}
               fileName={selectedDocName}
               onClose={() => setShowPdfViewer(false)}
             />
