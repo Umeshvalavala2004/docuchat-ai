@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash, Share2 } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer, Hash, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
@@ -29,6 +29,7 @@ interface ChatInterfaceProps {
   onInjectedPromptConsumed?: () => void;
   modelConfig?: ModelConfig;
   workspaceId?: string | null;
+  onDocumentDeleted?: () => void;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -117,7 +118,7 @@ function ChatSkeleton() {
 
 export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
-  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId,
+  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId, onDocumentDeleted,
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
@@ -378,6 +379,27 @@ export default function ChatInterface({
               </p>
               <p className="text-[10px] text-muted-foreground">Chat will be available once processing completes.</p>
             </div>
+            {onDocumentDeleted && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm("Delete this stuck document?")) {
+                    import("@/lib/api").then(({ deleteDocument }) => {
+                      deleteDocument(documentId).then(() => {
+                        toast.success("Document deleted.");
+                        onDocumentDeleted();
+                      }).catch(() => toast.error("Failed to delete document."));
+                    });
+                  }
+                }}
+                className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                <span className="text-xs">Delete</span>
+              </Button>
+            )}
           </div>
           <Progress value={docStatus === "pending" ? 10 : docStatus === "processing" ? 50 : 80} className="mt-2 h-1.5" />
         </motion.div>

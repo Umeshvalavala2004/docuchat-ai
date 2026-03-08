@@ -68,6 +68,14 @@ const Index = () => {
   const [toolDocId, setToolDocId] = useState<string | undefined>();
   const [toolDocName, setToolDocName] = useState<string | undefined>();
 
+  const handleDocumentDeletedFromChat = useCallback(() => {
+    setSelectedDocId(null);
+    setSelectedDocName("");
+    setChatSessionId(undefined);
+    setInitialMessages([]);
+    setView("upload");
+  }, []);
+
   const handleToolProcess = (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => {
     setActiveToolType(toolType);
     setToolDocId(documentId);
@@ -455,6 +463,7 @@ const Index = () => {
                         onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                         modelConfig={activeModel}
                         workspaceId={activeWorkspaceId}
+                        onDocumentDeleted={handleDocumentDeletedFromChat}
                       />
                     </div>
                   )
@@ -486,6 +495,7 @@ const Index = () => {
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                           modelConfig={activeModel}
                           workspaceId={activeWorkspaceId}
+                          onDocumentDeleted={handleDocumentDeletedFromChat}
                         />
                       </div>
                     </ResizablePanel>
@@ -511,6 +521,7 @@ const Index = () => {
                   onChatSessionCreated={(id) => setChatSessionId(id)}
                   onCitationClick={handleCitationClick}
                   workspaceId={activeWorkspaceId}
+                  onDocumentDeleted={handleDocumentDeletedFromChat}
                 />
               </motion.div>
             )}
