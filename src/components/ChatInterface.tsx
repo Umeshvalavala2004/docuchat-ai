@@ -129,6 +129,7 @@ export default function ChatInterface({
   chatSessionId,
   initialMessages,
   onChatSessionCreated,
+  onCitationClick,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
