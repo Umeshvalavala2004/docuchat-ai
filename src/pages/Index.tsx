@@ -111,6 +111,23 @@ const Index = () => {
     }
   };
 
+  const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
+  const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
+
+  // Keyboard shortcut: Ctrl+Shift+P to toggle PDF panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+        e.preventDefault();
+        if (showSplitView && !isMobile) {
+          setPdfPanelOpen(prev => !prev);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSplitView, isMobile]);
+
   if (loading || roleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -207,22 +224,7 @@ const Index = () => {
     }
   };
 
-  const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
-  const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
 
-  // Keyboard shortcut: Ctrl+Shift+P to toggle PDF panel
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "P") {
-        e.preventDefault();
-        if (showSplitView && !isMobile) {
-          setPdfPanelOpen(prev => !prev);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSplitView, isMobile]);
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
