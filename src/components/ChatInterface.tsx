@@ -138,6 +138,10 @@ export default function ChatInterface({
   const [allDocuments, setAllDocuments] = useState<MentionableDocument[]>([]);
   const [mentionedDocs, setMentionedDocs] = useState<MentionableDocument[]>([]);
 
+  // Sharing hooks
+  const docShareHook = useDocumentShares(documentId);
+  const chatShareHook = useChatSessionShares(sessionId || null);
+
   // Load user documents for mention system
   useEffect(() => {
     if (!userId) return;
