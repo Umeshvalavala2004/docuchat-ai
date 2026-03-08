@@ -174,7 +174,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                 <h3 className="text-sm font-semibold text-foreground mb-1">AI Model Settings</h3>
                 <p className="text-xs text-muted-foreground mb-4">Choose which AI model powers your document chat</p>
                 {currentModel && onModelChange ? (
-                  <ModelSettings currentModel={currentModel} onModelChange={onModelChange} />
+                  <ModelSettings currentModel={currentModel} onModelChange={onModelChange} userId={userId} />
                 ) : (
                   <p className="text-xs text-muted-foreground">Model settings unavailable.</p>
                 )}
