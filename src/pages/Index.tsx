@@ -385,7 +385,10 @@ const Index = () => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  {pdfPanelOpen ? "Hide PDF viewer" : "Show PDF viewer"}
+                  <span>{pdfPanelOpen ? "Hide PDF viewer" : "Show PDF viewer"}</span>
+                  <kbd className="ml-2 inline-flex items-center gap-0.5 rounded border border-border/50 bg-muted px-1 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    Ctrl+Shift+P
+                  </kbd>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
