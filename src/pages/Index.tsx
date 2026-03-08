@@ -56,6 +56,18 @@ const Index = () => {
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
   const [mobilePanel, setMobilePanel] = useState<"pdf" | "chat">("chat");
+  const [activeToolType, setActiveToolType] = useState<ToolTab>("chat");
+  const [toolText, setToolText] = useState<string | undefined>();
+  const [toolDocId, setToolDocId] = useState<string | undefined>();
+  const [toolDocName, setToolDocName] = useState<string | undefined>();
+
+  const handleToolProcess = (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => {
+    setActiveToolType(toolType);
+    setToolDocId(documentId);
+    setToolText(text);
+    setToolDocName(documentName);
+    setView("tool_results");
+  };
 
   const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
     const prompts: Record<TextAction, string> = {
