@@ -23,8 +23,9 @@ import EnterpriseSearch from "@/components/EnterpriseSearch";
 import ToolsDashboard from "@/components/ToolsDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import UserDashboard from "@/components/UserDashboard";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles, LayoutDashboard } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools" | "tool_results";
+type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools" | "tool_results" | "dashboard";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -294,6 +295,14 @@ const Index = () => {
                 <span className="font-medium text-foreground">{t("ai_tools")}</span>
               </div>
             )}
+            {view === "dashboard" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg gradient-primary flex items-center justify-center">
+                  <LayoutDashboard className="h-3 w-3 text-primary-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Dashboard</span>
+              </div>
+            )}
           </div>
 
           {/* Mobile toggle for PDF/Chat */}
@@ -319,6 +328,10 @@ const Index = () => {
           )}
 
           <LanguageSwitcher />
+
+          <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-lg ${view === "dashboard" ? "bg-primary/10 text-primary" : ""}`} onClick={() => setView("dashboard")} title="Dashboard">
+            <LayoutDashboard className="h-4 w-4" />
+          </Button>
 
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title={t("enterprise_search")}>
             <Search className="h-4 w-4" />
@@ -349,6 +362,10 @@ const Index = () => {
                   onSelectDocument={(docId, docName) => { handleSelectDocument(docId, docName); }}
                   onClose={() => setView("upload")}
                 />
+              </motion.div>
+            ) : view === "dashboard" ? (
+              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <UserDashboard userId={user.id} userName={profile?.name} />
               </motion.div>
             ) : view === "tools" ? (
               <motion.div key="tools" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
