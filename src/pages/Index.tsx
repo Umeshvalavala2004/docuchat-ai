@@ -12,6 +12,7 @@ import DocumentUpload from "@/components/DocumentUpload";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
+import EnterpriseSearch from "@/components/EnterpriseSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp } from "lucide-react";
