@@ -91,6 +91,9 @@ export default function Sidebar({
   profileName,
   profilePicture,
   usageInfo,
+  brandingAppName = "Interface_IQ",
+  brandingSubtitle = "Powered by Interface_IQ",
+  brandingLogoUrl,
 }: SidebarProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
