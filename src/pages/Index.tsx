@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useProfile } from "@/hooks/useProfile";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
@@ -23,6 +24,7 @@ const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const { role, isAdmin, loading: roleLoading, refetch: refetchRole } = useUserRole(user?.id);
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(user?.id);
+  const { profile } = useProfile(user?.id);
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -165,6 +167,8 @@ const Index = () => {
         userRole={role}
         onUpgradeClick={handleUpgradeClick}
         onAdminClick={() => setView("admin")}
+        profileName={profile?.name}
+        profilePicture={profile?.profile_picture}
       />
 
       {/* Main Content */}
