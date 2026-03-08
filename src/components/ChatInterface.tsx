@@ -319,24 +319,25 @@ export default function ChatInterface({
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
 
   return (
-    <div className="flex h-full flex-col bg-background/50">
+    <div className="flex h-full flex-col bg-background/50 overflow-hidden">
       {/* Model indicator + Performance bar */}
-      <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/50 bg-card/50">
-        <Badge variant="outline" className={`text-[10px] gap-1 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
+      <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 border-b border-border/50 bg-card/50 overflow-x-auto scrollbar-none">
+        <Badge variant="outline" className={`text-[10px] gap-1 shrink-0 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
           {modelConfig?.model_type === "local" ? <Monitor className="h-3 w-3" /> : <Cloud className="h-3 w-3" />}
-          {modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})
+          <span className="hidden sm:inline">{modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})</span>
+          <span className="sm:hidden">{modelConfig?.model_type === "local" ? "Local" : "Cloud"}</span>
         </Badge>
         {responseTime !== null && (
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0">
             <Timer className="h-3 w-3" />{(responseTime / 1000).toFixed(1)}s
           </span>
         )}
         {tokenCount !== null && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
             {tokenCount} tokens
           </span>
         )}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1 shrink-0">
           <ShareDialog
             type="document"
             name={documentName}
@@ -347,7 +348,7 @@ export default function ChatInterface({
             onUpdatePermission={docShareHook.updatePermission}
             trigger={
               <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <Share2 className="h-3 w-3" /> Share
+                <Share2 className="h-3 w-3" /><span className="hidden sm:inline">Share</span>
               </button>
             }
           />
@@ -361,7 +362,7 @@ export default function ChatInterface({
               onRemove={chatShareHook.removeShare}
               trigger={
                 <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                  <Share2 className="h-3 w-3" /> Share Chat
+                  <Share2 className="h-3 w-3" /><span className="hidden sm:inline">Share Chat</span>
                 </button>
               }
             />
@@ -411,7 +412,7 @@ export default function ChatInterface({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
         {messages.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex h-full flex-col items-center justify-center text-center">
             {docStatus !== "ready" && docStatus !== "error" ? (
@@ -436,8 +437,8 @@ export default function ChatInterface({
                 <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl gradient-primary p-6 mb-6 shadow-glow">
                   <Sparkles className="h-12 w-12 text-primary-foreground" />
                 </motion.div>
-                <h3 className="text-2xl font-bold text-foreground tracking-tight">Chat with {documentName}</h3>
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">Ask any question about your document. I'll find the answer and cite the exact source.</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{documentName.length > 30 ? documentName.slice(0, 30) + "…" : `Chat with ${documentName}`}</h3>
+                <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted-foreground leading-relaxed">Ask any question about your document. I'll find the answer and cite the exact source.</p>
 
                 {keyPoints.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 w-full max-w-md">
@@ -474,13 +475,13 @@ export default function ChatInterface({
         <div className="mx-auto max-w-3xl space-y-5">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex gap-2 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-                    <Bot className="h-4 w-4 text-primary-foreground" />
+                  <div className="mt-1 flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
+                    <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
                   </div>
                 )}
-                <div className="max-w-[85%] min-w-0">
+                <div className="max-w-[90%] sm:max-w-[85%] min-w-0">
                   {/* Mentioned docs tag above user message */}
                   {msg.role === "user" && msg.mentionedDocs && msg.mentionedDocs.length > 0 && (
                     <div className="flex items-center gap-1 mb-1 justify-end flex-wrap">
@@ -491,11 +492,11 @@ export default function ChatInterface({
                       ))}
                     </div>
                   )}
-                  <div className={`rounded-2xl px-4 py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
+                  <div className={`rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
                     {msg.role === "assistant" ? (
-                      <div className="prose prose-sm max-w-none dark:prose-invert text-foreground"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                      <div className="prose prose-sm max-w-none dark:prose-invert text-foreground break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                     ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                     )}
                     {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
                       <div className="mt-3 border-t border-border/30 pt-3">
@@ -531,7 +532,7 @@ export default function ChatInterface({
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Avatar className="h-9 w-9 rounded-xl border border-border shadow-sm cursor-pointer">
+                          <Avatar className="h-7 w-7 sm:h-9 sm:w-9 rounded-xl border border-border shadow-sm cursor-pointer">
                             {profile?.profile_picture ? (
                               <AvatarImage src={profile.profile_picture} alt="You" className="rounded-xl object-cover" />
                             ) : null}
@@ -613,7 +614,7 @@ export default function ChatInterface({
       )}
 
       {/* Input */}
-      <div className="border-t border-border glass p-4">
+      <div className="border-t border-border glass p-3 sm:p-4">
         <div className="mx-auto max-w-3xl">
           {/* Mentioned docs indicator */}
           {mentionedDocs.length > 0 && (
@@ -634,7 +635,7 @@ export default function ChatInterface({
               </button>
             </div>
           )}
-          <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-elegant focus-within:border-primary/40 focus-within:shadow-glow transition-all">
+          <div className="relative flex items-end gap-1.5 sm:gap-2 rounded-2xl border border-border bg-card p-1.5 sm:p-2 shadow-elegant focus-within:border-primary/40 focus-within:shadow-glow transition-all">
             {/* Mention dropdown */}
             <DocumentMentionDropdown
               userId={userId}
@@ -678,14 +679,14 @@ export default function ChatInterface({
                 handleKeyDown(e);
               }}
               placeholder="Ask a question... Type # to mention a document"
-              className="min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="min-h-[40px] sm:min-h-[44px] max-h-32 resize-none border-0 bg-transparent p-1.5 sm:p-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
-            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading || (docStatus !== "ready" && docStatus !== "error")} className="h-9 w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
+            <Button size="icon" onClick={send} disabled={!input.trim() || isLoading || (docStatus !== "ready" && docStatus !== "error")} className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl gradient-primary border-0 shadow-sm hover:opacity-90">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted-foreground/50">Type # to mention a document for targeted answers</p>
+          <p className="mt-1.5 sm:mt-2 text-center text-[10px] text-muted-foreground/50 hidden sm:block">Type # to mention a document for targeted answers</p>
         </div>
       </div>
     </div>
