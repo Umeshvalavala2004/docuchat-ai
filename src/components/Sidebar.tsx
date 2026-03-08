@@ -317,7 +317,9 @@ export default function Sidebar({
                         key={doc.id}
                         layout
                         className={`group rounded-xl transition-all ${
-                          selectedDocId === doc.id
+                          multiSelectMode && selectedDocIds.has(doc.id)
+                            ? "bg-primary/10 ring-1 ring-primary/20"
+                            : selectedDocId === doc.id && !multiSelectMode
                             ? "bg-primary/10 ring-1 ring-primary/20"
                             : doc.status === "ready"
                             ? "hover:bg-accent"
