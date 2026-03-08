@@ -19,7 +19,7 @@ interface SettingsPageProps {
   onModelChange?: (model: ModelConfig) => void;
 }
 
-type Tab = "general" | "ai-models" | "chat" | "documents" | "account";
+type Tab = "general" | "ai-models" | "chat" | "documents" | "account" | "about";
 
 export default function SettingsPage({ onBack, userId, profile, currentModel, onModelChange }: SettingsPageProps) {
   const [tab, setTab] = useState<Tab>("general");
