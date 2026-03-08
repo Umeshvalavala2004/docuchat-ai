@@ -228,6 +228,12 @@ const Index = () => {
           brandingSubtitle={branding.subtitle}
           brandingLogoUrl={branding.logoUrl}
           activeWorkspaceId={activeWorkspaceId}
+          workspaces={workspaces}
+          activeWorkspace={activeWorkspace}
+          onSwitchWorkspace={switchWorkspace}
+          onCreateWorkspace={createWorkspace}
+          onRenameWorkspace={renameWorkspace}
+          onDeleteWorkspace={deleteWorkspace}
         />
       )}
 
