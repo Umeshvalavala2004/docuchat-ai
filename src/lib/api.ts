@@ -5,6 +5,7 @@ export interface Source {
   content: string;
   chunk_index: number;
   page_number: number | null;
+  document_id?: string;
   score: number;
 }
 
@@ -12,6 +13,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  timestamp?: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -19,6 +21,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 export async function streamChat({
   message,
   documentId,
+  documentIds,
   chatSessionId,
   history,
   onSources,
@@ -27,7 +30,8 @@ export async function streamChat({
   onError,
 }: {
   message: string;
-  documentId: string;
+  documentId?: string;
+  documentIds?: string[];
   chatSessionId?: string;
   history: ChatMessage[];
   onSources: (sources: Source[]) => void;
@@ -45,6 +49,7 @@ export async function streamChat({
       body: JSON.stringify({
         message,
         documentId,
+        documentIds,
         chatSessionId,
         history: history.map((m) => ({ role: m.role, content: m.content })),
       }),
@@ -89,14 +94,11 @@ export async function streamChat({
 
         try {
           const parsed = JSON.parse(jsonStr);
-
-          // Check if this is our custom sources event
           if (parsed.sources && !sourcesReceived) {
             onSources(parsed.sources);
             sourcesReceived = true;
             continue;
           }
-
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) onDelta(content);
         } catch {
@@ -106,7 +108,6 @@ export async function streamChat({
       }
     }
 
-    // Final flush
     if (textBuffer.trim()) {
       for (let raw of textBuffer.split("\n")) {
         if (!raw) continue;
@@ -119,9 +120,7 @@ export async function streamChat({
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) onDelta(content);
-        } catch {
-          /* ignore */
-        }
+        } catch { /* ignore */ }
       }
     }
 
@@ -134,13 +133,11 @@ export async function streamChat({
 export async function uploadDocument(file: File, userId: string) {
   const filePath = `${userId}/${crypto.randomUUID()}-${file.name}`;
 
-  // Upload to storage
   const { error: uploadError } = await supabase.storage
     .from("documents")
     .upload(filePath, file);
   if (uploadError) throw uploadError;
 
-  // Create document record
   const { data: doc, error: docError } = await supabase
     .from("documents")
     .insert({
@@ -155,13 +152,11 @@ export async function uploadDocument(file: File, userId: string) {
     .single();
   if (docError) throw docError;
 
-  // Trigger processing
   const { error: processError } = await supabase.functions.invoke("process-document", {
     body: { documentId: doc.id },
   });
   if (processError) {
     console.error("Process error:", processError);
-    // Don't throw - processing happens async
   }
 
   return doc;
@@ -175,6 +170,14 @@ export async function getUserDocuments(userId: string) {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
+}
+
+export async function renameDocument(documentId: string, newName: string) {
+  const { error } = await supabase
+    .from("documents")
+    .update({ name: newName })
+    .eq("id", documentId);
+  if (error) throw error;
 }
 
 export async function createChatSession(userId: string, documentId: string, title?: string) {
@@ -224,4 +227,39 @@ export async function getChatMessages(chatSessionId: string) {
 export async function deleteDocument(documentId: string) {
   const { error } = await supabase.from("documents").delete().eq("id", documentId);
   if (error) throw error;
+}
+
+export async function deleteChatSession(sessionId: string) {
+  const { error } = await supabase.from("chat_sessions").delete().eq("id", sessionId);
+  if (error) throw error;
+}
+
+export async function getSuggestedQuestions(documentId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke("suggest-questions", {
+      body: { documentId, type: "questions" },
+    });
+    if (error) throw error;
+    return data?.items || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getKeyPoints(documentId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke("suggest-questions", {
+      body: { documentId, type: "keypoints" },
+    });
+    if (error) throw error;
+    return data?.items || [];
+  } catch {
+    return [];
+  }
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

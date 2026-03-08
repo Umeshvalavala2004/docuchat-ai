@@ -11,10 +11,16 @@ import {
   CheckCircle2,
   AlertCircle,
   History,
+  Pencil,
+  Check,
+  X,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getUserDocuments, getChatSessions, getChatMessages, deleteDocument } from "@/lib/api";
+import { Progress } from "@/components/ui/progress";
+import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
 import { toast } from "sonner";
 import UserProfile from "@/components/UserProfile";
 import DarkModeToggle from "@/components/DarkModeToggle";
@@ -33,11 +39,11 @@ interface SidebarProps {
 
 type Tab = "documents" | "history";
 
-const statusIcons: Record<string, React.ReactNode> = {
-  pending: <Clock className="h-3 w-3 text-warning" />,
-  processing: <Loader2 className="h-3 w-3 text-primary animate-spin" />,
-  ready: <CheckCircle2 className="h-3 w-3 text-success" />,
-  error: <AlertCircle className="h-3 w-3 text-destructive" />,
+const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
+  pending: { icon: <Clock className="h-3 w-3 text-warning" />, label: "Pending", progress: 10 },
+  processing: { icon: <Loader2 className="h-3 w-3 text-primary animate-spin" />, label: "Processing", progress: 60 },
+  ready: { icon: <CheckCircle2 className="h-3 w-3 text-success" />, label: "Ready", progress: 100 },
+  error: { icon: <AlertCircle className="h-3 w-3 text-destructive" />, label: "Error", progress: 0 },
 };
 
 export default function Sidebar({
@@ -54,6 +60,9 @@ export default function Sidebar({
   const [chatSessions, setChatSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("documents");
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadDocuments = async () => {
     try {
@@ -91,10 +100,47 @@ export default function Sidebar({
       await deleteDocument(docId);
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       toast.success("Document deleted");
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to delete document");
     }
   };
+
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteChatSession(sessionId);
+      setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      toast.success("Chat deleted");
+    } catch {
+      toast.error("Failed to delete chat");
+    }
+  };
+
+  const handleRename = async (docId: string) => {
+    if (!renameValue.trim()) {
+      setRenamingId(null);
+      return;
+    }
+    try {
+      await renameDocument(docId, renameValue.trim());
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, name: renameValue.trim() } : d))
+      );
+      toast.success("Document renamed");
+    } catch {
+      toast.error("Failed to rename");
+    }
+    setRenamingId(null);
+  };
+
+  const filteredDocs = documents.filter((d) =>
+    d.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSessions = chatSessions.filter((s) =>
+    s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.documents?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (collapsed) {
     return (
@@ -150,6 +196,19 @@ export default function Sidebar({
         </Button>
       </div>
 
+      {/* Search */}
+      <div className="px-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search..."
+            className="h-8 pl-8 text-xs rounded-lg bg-accent/50 border-0 focus-visible:ring-1"
+          />
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex px-3 gap-1 mb-1">
         <button
@@ -162,6 +221,11 @@ export default function Sidebar({
         >
           <FileText className="h-3 w-3" />
           Documents
+          {documents.length > 0 && (
+            <span className="ml-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+              {documents.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setTab("history")}
@@ -173,6 +237,11 @@ export default function Sidebar({
         >
           <History className="h-3 w-3" />
           History
+          {chatSessions.length > 0 && (
+            <span className="ml-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+              {chatSessions.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -190,40 +259,104 @@ export default function Sidebar({
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : documents.length === 0 ? (
+              ) : filteredDocs.length === 0 ? (
                 <div className="flex flex-col items-center py-8 px-4 text-center">
                   <div className="rounded-xl bg-muted p-3 mb-3">
                     <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    No documents yet. Upload one to get started.
+                    {searchQuery ? "No matching documents" : "No documents yet. Upload one to get started."}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1 py-1">
-                  {documents.map((doc) => (
-                    <motion.button
-                      key={doc.id}
-                      onClick={() => doc.status === "ready" && onSelectDocument(doc.id, doc.name)}
-                      className={`group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-all ${
-                        selectedDocId === doc.id
-                          ? "bg-primary/10 text-foreground ring-1 ring-primary/20"
-                          : doc.status === "ready"
-                          ? "text-sidebar-foreground hover:bg-accent hover:text-foreground"
-                          : "text-muted-foreground cursor-default opacity-60"
-                      }`}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {statusIcons[doc.status] || statusIcons.pending}
-                      <span className="flex-1 truncate text-xs font-medium">{doc.name}</span>
-                      {doc.status === "ready" && (
-                        <Trash2
-                          className="h-3 w-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-destructive"
-                          onClick={(e) => handleDelete(doc.id, e)}
-                        />
-                      )}
-                    </motion.button>
-                  ))}
+                  {filteredDocs.map((doc) => {
+                    const status = statusConfig[doc.status] || statusConfig.pending;
+                    return (
+                      <motion.div
+                        key={doc.id}
+                        className={`group rounded-xl transition-all ${
+                          selectedDocId === doc.id
+                            ? "bg-primary/10 ring-1 ring-primary/20"
+                            : doc.status === "ready"
+                            ? "hover:bg-accent"
+                            : "opacity-70"
+                        }`}
+                      >
+                        <button
+                          onClick={() => doc.status === "ready" && onSelectDocument(doc.id, doc.name)}
+                          className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left text-sm"
+                          disabled={doc.status !== "ready"}
+                        >
+                          {status.icon}
+                          <div className="flex-1 min-w-0">
+                            {renamingId === doc.id ? (
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <Input
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleRename(doc.id);
+                                    if (e.key === "Escape") setRenamingId(null);
+                                  }}
+                                  className="h-6 text-xs px-1 border-primary"
+                                  autoFocus
+                                />
+                                <button onClick={() => handleRename(doc.id)}>
+                                  <Check className="h-3 w-3 text-success" />
+                                </button>
+                                <button onClick={() => setRenamingId(null)}>
+                                  <X className="h-3 w-3 text-muted-foreground" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="truncate text-xs font-medium text-foreground block">
+                                {doc.name}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-muted-foreground">
+                                {formatFileSize(doc.file_size)}
+                              </span>
+                              {doc.status !== "ready" && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  • {status.label}
+                                </span>
+                              )}
+                              {doc.page_count && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  • {doc.page_count} pages
+                                </span>
+                              )}
+                            </div>
+                            {(doc.status === "pending" || doc.status === "processing") && (
+                              <Progress value={status.progress} className="h-1 mt-1.5" />
+                            )}
+                          </div>
+                        </button>
+                        {doc.status === "ready" && renamingId !== doc.id && (
+                          <div className="flex items-center gap-0.5 px-3 pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRenamingId(doc.id);
+                                setRenameValue(doc.name);
+                              }}
+                              className="p-1 rounded hover:bg-accent"
+                            >
+                              <Pencil className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDelete(doc.id, e)}
+                              className="p-1 rounded hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
@@ -234,35 +367,44 @@ export default function Sidebar({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {chatSessions.length === 0 ? (
+              {filteredSessions.length === 0 ? (
                 <div className="flex flex-col items-center py-8 px-4 text-center">
                   <div className="rounded-xl bg-muted p-3 mb-3">
                     <MessageSquare className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    No chat history yet. Start a conversation!
+                    {searchQuery ? "No matching chats" : "No chat history yet. Start a conversation!"}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1 py-1">
-                  {chatSessions.map((session) => (
-                    <motion.button
+                  {filteredSessions.map((session) => (
+                    <motion.div
                       key={session.id}
-                      onClick={() => {
-                        const docName = session.documents?.name || "Document";
-                        onSelectChatSession(session.id, session.document_id, docName);
-                      }}
-                      className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all text-sidebar-foreground hover:bg-accent hover:text-foreground"
-                      whileTap={{ scale: 0.98 }}
+                      className="group flex items-center rounded-xl hover:bg-accent transition-all"
                     >
-                      <MessageSquare className="h-3 w-3 shrink-0 text-primary/70" />
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate text-xs font-medium">{session.title}</p>
-                        <p className="truncate text-[10px] text-muted-foreground mt-0.5">
-                          {session.documents?.name || "Unknown document"} • {new Date(session.updated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </motion.button>
+                      <button
+                        onClick={() => {
+                          const docName = session.documents?.name || "Document";
+                          onSelectChatSession(session.id, session.document_id, docName);
+                        }}
+                        className="flex-1 flex items-center gap-2.5 px-3 py-2.5 text-left min-w-0"
+                      >
+                        <MessageSquare className="h-3 w-3 shrink-0 text-primary/70" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-xs font-medium text-foreground">{session.title}</p>
+                          <p className="truncate text-[10px] text-muted-foreground mt-0.5">
+                            {session.documents?.name || "Unknown document"} • {new Date(session.updated_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteSession(session.id, e)}
+                        className="p-1.5 mr-2 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
+                      >
+                        <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </motion.div>
                   ))}
                 </div>
               )}
