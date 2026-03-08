@@ -22,6 +22,8 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
 import QuickQuestions from "@/components/QuickQuestions";
 import ShareDialog from "@/components/ShareDialog";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useDocumentShares, useSharedWithMe } from "@/hooks/useSharing";
 import type { User } from "@supabase/supabase-js";
 
