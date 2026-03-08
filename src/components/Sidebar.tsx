@@ -107,6 +107,12 @@ export default function Sidebar({
   brandingSubtitle = "Powered by Interface_IQ",
   brandingLogoUrl,
   activeWorkspaceId,
+  workspaces = [],
+  activeWorkspace = null,
+  onSwitchWorkspace,
+  onCreateWorkspace,
+  onRenameWorkspace,
+  onDeleteWorkspace,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<any[]>([]);
