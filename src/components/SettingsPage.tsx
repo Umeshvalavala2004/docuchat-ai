@@ -283,6 +283,45 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                 </div>
               </motion.div>
             )}
+
+            {tab === "about" && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-primary shadow-sm">
+                      <FileText className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Interface_IQ</h3>
+                      <p className="text-xs text-muted-foreground">Powered by Interface_IQ</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Interface_IQ is an AI-powered document intelligence platform designed to analyze documents, extract insights, and enable conversational interaction with enterprise knowledge.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Platform Details</h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: "Project Name", value: "Interface_IQ" },
+                      { label: "Version", value: "1.0.0" },
+                      { label: "Platform", value: "AI Document Intelligence" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="font-medium text-foreground">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="text-center py-4">
+                  <p className="text-xs text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+                </div>
+              </motion.div>
+            )}
           </div>
         </ScrollArea>
       </div>
