@@ -186,6 +186,7 @@ const Index = () => {
           onUpgradeClick={handleUpgradeClick}
           onAdminClick={() => setView("admin")}
           onSettingsClick={() => setView("settings")}
+          onSearchClick={() => setView("search")}
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
         />
