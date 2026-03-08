@@ -165,11 +165,22 @@ const Index = () => {
                 {/* Chat header */}
                 <div className="flex items-center gap-3 border-b border-border px-5 py-3 bg-card/50 backdrop-blur-sm">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
+                    {selectedDocIds.length > 1 ? (
+                      <Layers className="h-4 w-4 text-primary" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-primary" />
+                    )}
                   </div>
-                  <span className="text-sm font-semibold text-foreground truncate flex-1">
-                    {selectedDocName}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-foreground truncate block">
+                      {selectedDocIds.length > 1 ? `${selectedDocIds.length} Documents` : selectedDocName}
+                    </span>
+                    {selectedDocIds.length > 1 && (
+                      <span className="text-[10px] text-muted-foreground truncate block">
+                        {selectedDocName}
+                      </span>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
