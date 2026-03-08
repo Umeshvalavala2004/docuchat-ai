@@ -635,7 +635,7 @@ export default function ChatInterface({
               </button>
             </div>
           )}
-          <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-elegant focus-within:border-primary/40 focus-within:shadow-glow transition-all">
+          <div className="relative flex items-end gap-1.5 sm:gap-2 rounded-2xl border border-border bg-card p-1.5 sm:p-2 shadow-elegant focus-within:border-primary/40 focus-within:shadow-glow transition-all">
             {/* Mention dropdown */}
             <DocumentMentionDropdown
               userId={userId}
