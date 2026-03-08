@@ -28,6 +28,7 @@ interface ChatInterfaceProps {
   injectedPrompt?: string;
   onInjectedPromptConsumed?: () => void;
   modelConfig?: ModelConfig;
+  workspaceId?: string | null;
 }
 
 function CopyButton({ text }: { text: string }) {
