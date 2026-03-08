@@ -227,8 +227,16 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
     };
 
     const multiDocNote = docIds.length > 1 ? "You are chatting across multiple documents. Indicate which document each answer comes from." : "";
+    const styleInstructions: Record<string, string> = {
+      Concise: "Be extremely concise and brief. Use short sentences and bullet points. Avoid unnecessary detail.",
+      Detailed: "Be thorough and well-structured. Provide comprehensive explanations with examples where helpful.",
+      Academic: "Use formal academic language. Include precise terminology, structured arguments, and scholarly tone. Cite sources methodically.",
+    };
+    const styleNote = styleInstructions[responseStyle || "Detailed"] || styleInstructions.Detailed;
     const systemPrompt = `You are a document Q&A assistant. Answer questions STRICTLY based on the provided document context.
 ${multiDocNote}
+RESPONSE STYLE: ${styleNote}
+
 CRITICAL RULES:
 1. ONLY use information from the provided context below. Do NOT use any prior knowledge.
 2. If the answer is NOT found in the context, respond: "I couldn't find this information in the provided document sections. Try rephrasing your question or asking about a different topic covered in the document."

@@ -71,6 +71,7 @@ export async function streamChat({
         documentIds,
         chatSessionId,
         modelId,
+        responseStyle,
         history: history.map((m) => ({ role: m.role, content: m.content })),
       }),
     });
