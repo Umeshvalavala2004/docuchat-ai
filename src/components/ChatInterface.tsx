@@ -309,6 +309,15 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* RAG Debug Panel */}
+      {activeSources.length > 0 && (
+        <RagDebugPanel
+          debugInfo={{ sources: activeSources, modelUsed: "Gemini 3 Flash" }}
+          onCitationClick={onCitationClick}
+          documentName={documentName}
+        />
+      )}
+
       {/* Input */}
       <div className="border-t border-border glass p-4">
         <div className="mx-auto max-w-3xl">
