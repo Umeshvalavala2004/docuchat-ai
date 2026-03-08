@@ -1,36 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileText,
-  MessageSquare,
-  Plus,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Pencil,
-  Check,
-  X,
-  Search,
-  Database,
-  Layers,
-  FolderPlus,
-  Folder,
-  FolderOpen,
-  ChevronDown,
-  PenLine,
-  Shield,
-  Youtube,
-  FlaskConical,
-  Globe,
-  GitCompare,
-  Sparkles,
-  Crown,
-  FileType,
-  FileType2,
+  FileText, MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight,
+  Loader2, Clock, CheckCircle2, AlertCircle, Pencil, Check, X,
+  Search, Database, Layers, FolderPlus, Folder, FolderOpen,
+  ChevronDown, PenLine, Shield, Youtube, FlaskConical, Globe,
+  GitCompare, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +31,7 @@ interface SidebarProps {
   userRole?: "free_user" | "pro_user" | "admin";
   onUpgradeClick?: () => void;
   onAdminClick?: () => void;
+  onSettingsClick?: () => void;
   profileName?: string | null;
   profilePicture?: string | null;
 }
@@ -74,7 +50,7 @@ const tools = [
   { id: "youtube-chat", label: "YouTube Chat", icon: Youtube, color: "text-red-500" },
   { id: "research", label: "Research Assistant", icon: FlaskConical, color: "text-violet-500" },
   { id: "web-chat", label: "Web Page Chat", icon: Globe, color: "text-sky-500" },
-  { id: "doc-compare", label: "Document Comparison", icon: GitCompare, color: "text-orange-500" },
+  { id: "doc-compare", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
 ];
 
 function getDocIcon(name: string) {
@@ -105,6 +81,7 @@ export default function Sidebar({
   userRole = "free_user",
   onUpgradeClick,
   onAdminClick,
+  onSettingsClick,
   profileName,
   profilePicture,
 }: SidebarProps) {
@@ -119,8 +96,6 @@ export default function Sidebar({
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-
-  // Section collapse state
   const [chatsOpen, setChatsOpen] = useState(true);
   const [foldersOpen, setFoldersOpen] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -161,9 +136,7 @@ export default function Sidebar({
       await deleteDocument(docId);
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       toast.success("Document deleted");
-    } catch {
-      toast.error("Failed to delete document");
-    }
+    } catch { toast.error("Failed to delete document"); }
   };
 
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
@@ -172,37 +145,22 @@ export default function Sidebar({
       await deleteChatSession(sessionId);
       setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
       toast.success("Chat deleted");
-    } catch {
-      toast.error("Failed to delete chat");
-    }
+    } catch { toast.error("Failed to delete chat"); }
   };
 
   const handleRename = async (docId: string) => {
-    if (!renameValue.trim()) {
-      setRenamingId(null);
-      return;
-    }
+    if (!renameValue.trim()) { setRenamingId(null); return; }
     try {
       await renameDocument(docId, renameValue.trim());
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, name: renameValue.trim() } : d))
-      );
+      setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, name: renameValue.trim() } : d)));
       toast.success("Document renamed");
-    } catch {
-      toast.error("Failed to rename");
-    }
+    } catch { toast.error("Failed to rename"); }
     setRenamingId(null);
   };
 
   const handleCreateFolder = () => {
-    if (!newFolderName.trim()) {
-      setCreatingFolder(false);
-      return;
-    }
-    setFolders((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name: newFolderName.trim(), docIds: [], open: true },
-    ]);
+    if (!newFolderName.trim()) { setCreatingFolder(false); return; }
+    setFolders((prev) => [...prev, { id: crypto.randomUUID(), name: newFolderName.trim(), docIds: [], open: true }]);
     setNewFolderName("");
     setCreatingFolder(false);
     toast.success("Folder created");
@@ -214,15 +172,10 @@ export default function Sidebar({
   };
 
   const toggleFolderOpen = (folderId: string) => {
-    setFolders((prev) =>
-      prev.map((f) => (f.id === folderId ? { ...f, open: !f.open } : f))
-    );
+    setFolders((prev) => prev.map((f) => (f.id === folderId ? { ...f, open: !f.open } : f)));
   };
 
-  const filteredDocs = documents.filter((d) =>
-    d.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredDocs = documents.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredSessions = chatSessions.filter((s) =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.documents?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
@@ -234,7 +187,11 @@ export default function Sidebar({
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={0}>
-        <div className="flex h-full w-14 flex-col items-center border-r border-border bg-sidebar py-3 gap-1">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: 56 }}
+          className="flex h-full w-14 flex-col items-center border-r border-border bg-card py-3 gap-1.5"
+        >
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={onToggle} className="h-9 w-9 rounded-xl mb-2">
@@ -246,7 +203,7 @@ export default function Sidebar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={onNewUpload} className="h-9 w-9 rounded-xl bg-primary/10 text-primary hover:bg-primary/20">
+              <Button variant="ghost" size="icon" onClick={onNewUpload} className="h-9 w-9 rounded-xl gradient-primary text-primary-foreground hover:opacity-90">
                 <Plus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -282,18 +239,28 @@ export default function Sidebar({
             <TooltipContent side="right">Tools</TooltipContent>
           </Tooltip>
 
-          <div className="mt-auto flex flex-col items-center gap-1">
+          <div className="mt-auto flex flex-col items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={onSettingsClick}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Settings</TooltipContent>
+            </Tooltip>
             <DarkModeToggle />
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-[10px] font-bold cursor-pointer">
-                  {initials}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-primary-foreground text-[10px] font-bold cursor-pointer">
+                  {profilePicture ? (
+                    <img src={profilePicture} className="h-8 w-8 rounded-full object-cover" alt="" />
+                  ) : initials}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right">{user.email}</TooltipContent>
             </Tooltip>
           </div>
-        </div>
+        </motion.div>
       </TooltipProvider>
     );
   }
@@ -301,20 +268,20 @@ export default function Sidebar({
   return (
     <motion.div
       initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 300, opacity: 1 }}
+      animate={{ width: 280, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex h-full w-[300px] flex-col border-r border-border bg-sidebar"
+      className="flex h-full w-[280px] flex-col border-r border-border bg-card"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl gradient-primary shadow-sm">
             <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tight">DocChat AI</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <DarkModeToggle />
           <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 rounded-lg">
             <ChevronLeft className="h-4 w-4" />
@@ -326,7 +293,7 @@ export default function Sidebar({
       <div className="px-3 pt-3 pb-2">
         <Button
           onClick={onNewUpload}
-          className="w-full justify-center gap-2 rounded-xl h-10 text-sm font-medium shadow-sm"
+          className="w-full justify-center gap-2 rounded-xl h-10 text-sm font-medium gradient-primary hover:opacity-90 shadow-sm border-0"
         >
           <Plus className="h-4 w-4" />
           New Chat
@@ -340,7 +307,7 @@ export default function Sidebar({
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search documents, chats, folders..."
+            placeholder="Search..."
             className="h-8 pl-8 text-xs rounded-lg bg-accent/50 border-0 focus-visible:ring-1"
           />
         </div>
@@ -350,14 +317,9 @@ export default function Sidebar({
       {documents.filter(d => d.status === "ready").length > 1 && (
         <div className="px-3 pb-1">
           <button
-            onClick={() => {
-              setMultiSelectMode(!multiSelectMode);
-              setSelectedDocIds(new Set());
-            }}
+            onClick={() => { setMultiSelectMode(!multiSelectMode); setSelectedDocIds(new Set()); }}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors w-full justify-center ${
-              multiSelectMode
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              multiSelectMode ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
             }`}
           >
             <Layers className="h-3 w-3" />
@@ -369,28 +331,15 @@ export default function Sidebar({
       {/* Scrollable content */}
       <ScrollArea className="flex-1">
         <div className="px-2 py-1 space-y-0.5">
-
-          {/* ── SECTION: CHATS ── */}
-          <SectionHeader
-            label="Chats"
-            icon={<MessageSquare className="h-3.5 w-3.5" />}
-            count={filteredDocs.length}
-            open={chatsOpen}
-            onToggle={() => setChatsOpen(!chatsOpen)}
-          />
+          {/* CHATS */}
+          <SectionHeader label="Chats" icon={<MessageSquare className="h-3.5 w-3.5" />} count={filteredDocs.length} open={chatsOpen} onToggle={() => setChatsOpen(!chatsOpen)} />
           <AnimatePresence initial={false}>
             {chatsOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                 {loading ? (
                   <div className="space-y-1.5 py-1 px-1">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="rounded-lg bg-muted/50 p-3 animate-pulse">
+                      <div key={i} className="rounded-xl bg-accent/50 p-3 animate-pulse">
                         <div className="h-3 w-3/4 rounded bg-muted mb-1.5" />
                         <div className="h-2 w-1/2 rounded bg-muted" />
                       </div>
@@ -398,122 +347,53 @@ export default function Sidebar({
                   </div>
                 ) : filteredDocs.length === 0 ? (
                   <div className="px-3 py-4 text-center">
-                    <p className="text-[11px] text-muted-foreground">
-                      {searchQuery ? "No matching documents" : "No documents yet"}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{searchQuery ? "No matching documents" : "No documents yet"}</p>
                   </div>
                 ) : (
                   <div className="space-y-0.5 py-0.5 px-1">
                     {filteredDocs.map((doc) => {
                       const status = statusConfig[doc.status] || statusConfig.pending;
-                      const isActive = multiSelectMode
-                        ? selectedDocIds.has(doc.id)
-                        : selectedDocId === doc.id;
-
+                      const isActive = multiSelectMode ? selectedDocIds.has(doc.id) : selectedDocId === doc.id;
                       return (
-                        <motion.div
-                          key={doc.id}
-                          layout
-                          className={`group rounded-lg transition-all ${
-                            isActive
-                              ? "bg-primary/10"
-                              : doc.status === "ready"
-                              ? "hover:bg-accent"
-                              : "opacity-60"
-                          }`}
-                        >
+                        <motion.div key={doc.id} layout className={`group rounded-xl transition-all ${isActive ? "bg-primary/8 ring-1 ring-primary/20" : doc.status === "ready" ? "hover:bg-accent/70" : "opacity-60"}`}>
                           <button
                             onClick={() => {
                               if (multiSelectMode && doc.status === "ready") {
-                                setSelectedDocIds(prev => {
-                                  const next = new Set(prev);
-                                  if (next.has(doc.id)) next.delete(doc.id);
-                                  else next.add(doc.id);
-                                  return next;
-                                });
-                              } else if (doc.status === "ready") {
-                                onSelectDocument(doc.id, doc.name);
-                              }
+                                setSelectedDocIds(prev => { const next = new Set(prev); if (next.has(doc.id)) next.delete(doc.id); else next.add(doc.id); return next; });
+                              } else if (doc.status === "ready") { onSelectDocument(doc.id, doc.name); }
                             }}
                             className="flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-sm"
                             disabled={doc.status !== "ready"}
                           >
                             {multiSelectMode && doc.status === "ready" ? (
-                              <Checkbox
-                                checked={selectedDocIds.has(doc.id)}
-                                className="shrink-0 pointer-events-none"
-                                tabIndex={-1}
-                              />
+                              <Checkbox checked={selectedDocIds.has(doc.id)} className="shrink-0 pointer-events-none" tabIndex={-1} />
                             ) : (
                               <span className="shrink-0">{getDocIcon(doc.name)}</span>
                             )}
                             <div className="flex-1 min-w-0">
                               {renamingId === doc.id ? (
                                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={renameValue}
-                                    onChange={(e) => setRenameValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") handleRename(doc.id);
-                                      if (e.key === "Escape") setRenamingId(null);
-                                    }}
-                                    className="h-6 text-xs px-1.5"
-                                    autoFocus
-                                  />
-                                  <button onClick={() => handleRename(doc.id)}>
-                                    <Check className="h-3 w-3 text-success" />
-                                  </button>
-                                  <button onClick={() => setRenamingId(null)}>
-                                    <X className="h-3 w-3 text-muted-foreground" />
-                                  </button>
+                                  <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleRename(doc.id); if (e.key === "Escape") setRenamingId(null); }} className="h-6 text-xs px-1.5" autoFocus />
+                                  <button onClick={() => handleRename(doc.id)}><Check className="h-3 w-3 text-success" /></button>
+                                  <button onClick={() => setRenamingId(null)}><X className="h-3 w-3 text-muted-foreground" /></button>
                                 </div>
                               ) : (
                                 <>
-                                  <span className="truncate text-xs font-medium text-foreground block">
-                                    {doc.name}
-                                  </span>
+                                  <span className="truncate text-xs font-medium text-foreground block">{doc.name}</span>
                                   <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {formatFileSize(doc.file_size)}
-                                    </span>
-                                    {doc.page_count > 0 && (
-                                      <span className="text-[10px] text-muted-foreground">
-                                        • {doc.page_count}p
-                                      </span>
-                                    )}
-                                    {doc.status !== "ready" && (
-                                      <span className="text-[10px] text-primary font-medium">
-                                        • {status.label}
-                                      </span>
-                                    )}
+                                    <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                                    {doc.page_count > 0 && <span className="text-[10px] text-muted-foreground">• {doc.page_count}p</span>}
+                                    {doc.status !== "ready" && <span className="text-[10px] text-primary font-medium">• {status.label}</span>}
                                   </div>
                                 </>
                               )}
-                              {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && (
-                                <Progress value={status.progress} className="h-0.5 mt-1" />
-                              )}
+                              {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && <Progress value={status.progress} className="h-0.5 mt-1" />}
                             </div>
                           </button>
                           {doc.status === "ready" && renamingId !== doc.id && (
                             <div className="flex items-center gap-0.5 px-2.5 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRenamingId(doc.id);
-                                  setRenameValue(doc.name);
-                                }}
-                                className="p-1 rounded hover:bg-accent"
-                                title="Rename"
-                              >
-                                <Pencil className="h-3 w-3 text-muted-foreground" />
-                              </button>
-                              <button
-                                onClick={(e) => handleDelete(doc.id, e)}
-                                className="p-1 rounded hover:bg-destructive/10"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setRenameValue(doc.name); }} className="p-1 rounded-lg hover:bg-accent" title="Rename"><Pencil className="h-3 w-3 text-muted-foreground" /></button>
+                              <button onClick={(e) => handleDelete(doc.id, e)} className="p-1 rounded-lg hover:bg-destructive/10" title="Delete"><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                             </div>
                           )}
                         </motion.div>
@@ -522,40 +402,21 @@ export default function Sidebar({
                   </div>
                 )}
 
-                {/* Recent chat sessions under Chats */}
+                {/* Recent chat sessions */}
                 {filteredSessions.length > 0 && (
                   <div className="px-1 pt-1 pb-1">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1.5">
-                      Recent Chats
-                    </p>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1.5">Recent Chats</p>
                     <div className="space-y-0.5">
                       {filteredSessions.slice(0, 10).map((session) => (
-                        <motion.div
-                          key={session.id}
-                          layout
-                          className="group flex items-center rounded-lg hover:bg-accent transition-all"
-                        >
-                          <button
-                            onClick={() => {
-                              const docName = session.documents?.name || "Document";
-                              onSelectChatSession(session.id, session.document_id, docName);
-                            }}
-                            className="flex-1 flex items-center gap-2.5 px-2.5 py-2 text-left min-w-0"
-                          >
+                        <motion.div key={session.id} layout className="group flex items-center rounded-xl hover:bg-accent/70 transition-all">
+                          <button onClick={() => { const docName = session.documents?.name || "Document"; onSelectChatSession(session.id, session.document_id, docName); }} className="flex-1 flex items-center gap-2.5 px-2.5 py-2 text-left min-w-0">
                             <MessageSquare className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                             <div className="flex-1 min-w-0">
                               <p className="truncate text-xs font-medium text-foreground">{session.title}</p>
-                              <p className="truncate text-[10px] text-muted-foreground mt-0.5">
-                                {session.documents?.name || "Unknown"} • {new Date(session.updated_at).toLocaleDateString()}
-                              </p>
+                              <p className="truncate text-[10px] text-muted-foreground mt-0.5">{session.documents?.name || "Unknown"} • {new Date(session.updated_at).toLocaleDateString()}</p>
                             </div>
                           </button>
-                          <button
-                            onClick={(e) => handleDeleteSession(session.id, e)}
-                            className="p-1.5 mr-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
-                          >
-                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                          </button>
+                          <button onClick={(e) => handleDeleteSession(session.id, e)} className="p-1.5 mr-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                         </motion.div>
                       ))}
                     </div>
@@ -565,102 +426,40 @@ export default function Sidebar({
             )}
           </AnimatePresence>
 
-          {/* ── SECTION: FOLDERS ── */}
-          <SectionHeader
-            label="Folders"
-            icon={<Folder className="h-3.5 w-3.5" />}
-            count={folders.length}
-            open={foldersOpen}
-            onToggle={() => setFoldersOpen(!foldersOpen)}
-            action={
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCreatingFolder(true);
-                  setFoldersOpen(true);
-                }}
-                className="p-0.5 rounded hover:bg-accent transition-colors"
-                title="New Folder"
-              >
-                <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            }
+          {/* FOLDERS */}
+          <SectionHeader label="Folders" icon={<Folder className="h-3.5 w-3.5" />} count={folders.length} open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)}
+            action={<button onClick={(e) => { e.stopPropagation(); setCreatingFolder(true); setFoldersOpen(true); }} className="p-0.5 rounded hover:bg-accent transition-colors" title="New Folder"><FolderPlus className="h-3.5 w-3.5 text-muted-foreground" /></button>}
           />
           <AnimatePresence initial={false}>
             {foldersOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                 <div className="space-y-0.5 py-0.5 px-1">
                   {creatingFolder && (
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5">
                       <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <Input
-                        value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleCreateFolder();
-                          if (e.key === "Escape") setCreatingFolder(false);
-                        }}
-                        placeholder="Folder name"
-                        className="h-6 text-xs px-1.5 flex-1"
-                        autoFocus
-                      />
-                      <button onClick={handleCreateFolder}>
-                        <Check className="h-3 w-3 text-success" />
-                      </button>
-                      <button onClick={() => setCreatingFolder(false)}>
-                        <X className="h-3 w-3 text-muted-foreground" />
-                      </button>
+                      <Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") setCreatingFolder(false); }} placeholder="Folder name" className="h-6 text-xs px-1.5 flex-1" autoFocus />
+                      <button onClick={handleCreateFolder}><Check className="h-3 w-3 text-success" /></button>
+                      <button onClick={() => setCreatingFolder(false)}><X className="h-3 w-3 text-muted-foreground" /></button>
                     </div>
                   )}
                   {folders.length === 0 && !creatingFolder ? (
-                    <div className="px-3 py-3 text-center">
-                      <p className="text-[11px] text-muted-foreground">No folders yet</p>
-                    </div>
+                    <div className="px-3 py-3 text-center"><p className="text-[11px] text-muted-foreground">No folders yet</p></div>
                   ) : (
                     folders.map((folder) => (
                       <div key={folder.id}>
-                        <div className="group flex items-center rounded-lg hover:bg-accent transition-all">
-                          <button
-                            onClick={() => toggleFolderOpen(folder.id)}
-                            className="flex-1 flex items-center gap-2 px-2.5 py-2 text-left"
-                          >
-                            {folder.open ? (
-                              <FolderOpen className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                            ) : (
-                              <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            )}
+                        <div className="group flex items-center rounded-xl hover:bg-accent/70 transition-all">
+                          <button onClick={() => toggleFolderOpen(folder.id)} className="flex-1 flex items-center gap-2 px-2.5 py-2 text-left">
+                            {folder.open ? <FolderOpen className="h-3.5 w-3.5 text-primary/70 shrink-0" /> : <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                             <span className="text-xs font-medium text-foreground truncate">{folder.name}</span>
                             <span className="text-[10px] text-muted-foreground ml-auto">{folder.docIds.length}</span>
                           </button>
-                          <button
-                            onClick={() => handleDeleteFolder(folder.id)}
-                            className="p-1 mr-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
-                          >
-                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                          </button>
+                          <button onClick={() => handleDeleteFolder(folder.id)} className="p-1 mr-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                         </div>
                         {folder.open && folder.docIds.length > 0 && (
                           <div className="pl-7 space-y-0.5">
-                            {folder.docIds.map((docId) => {
-                              const doc = documents.find((d) => d.id === docId);
-                              if (!doc) return null;
-                              return (
-                                <button
-                                  key={docId}
-                                  onClick={() => onSelectDocument(doc.id, doc.name)}
-                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-accent w-full text-left"
-                                >
-                                  {getDocIcon(doc.name)}
-                                  <span className="truncate">{doc.name}</span>
-                                </button>
-                              );
-                            })}
+                            {folder.docIds.map((docId) => { const doc = documents.find((d) => d.id === docId); if (!doc) return null; return (
+                              <button key={docId} onClick={() => onSelectDocument(doc.id, doc.name)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-accent w-full text-left">{getDocIcon(doc.name)}<span className="truncate">{doc.name}</span></button>
+                            ); })}
                           </div>
                         )}
                       </div>
@@ -671,31 +470,15 @@ export default function Sidebar({
             )}
           </AnimatePresence>
 
-          {/* ── SECTION: TOOLS ── */}
-          <SectionHeader
-            label="Tools"
-            icon={<Sparkles className="h-3.5 w-3.5" />}
-            open={toolsOpen}
-            onToggle={() => setToolsOpen(!toolsOpen)}
-          />
+          {/* TOOLS */}
+          <SectionHeader label="Tools" icon={<Sparkles className="h-3.5 w-3.5" />} open={toolsOpen} onToggle={() => setToolsOpen(!toolsOpen)} />
           <AnimatePresence initial={false}>
             {toolsOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                 <div className="space-y-0.5 py-0.5 px-1">
                   {tools.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => toast.info(`${tool.label} coming soon!`)}
-                      className="flex items-center gap-2.5 w-full rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    >
-                      <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />
-                      {tool.label}
+                    <button key={tool.id} onClick={() => toast.info(`${tool.label} coming soon!`)} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
+                      <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{tool.label}
                     </button>
                   ))}
                 </div>
@@ -708,119 +491,55 @@ export default function Sidebar({
       {/* Multi-doc chat bar */}
       {multiSelectMode && selectedDocIds.size >= 2 && (
         <div className="border-t border-border px-3 py-2">
-          <Button
-            onClick={() => {
-              const ids = Array.from(selectedDocIds);
-              const names = ids.map(id => documents.find(d => d.id === id)?.name || "Document");
-              onStartMultiDocChat(ids, names);
-              setMultiSelectMode(false);
-              setSelectedDocIds(new Set());
-            }}
-            className="w-full gap-2 rounded-xl h-9 text-xs"
-            size="sm"
-          >
-            <Layers className="h-3.5 w-3.5" />
-            Chat with {selectedDocIds.size} documents
+          <Button onClick={() => { const ids = Array.from(selectedDocIds); const names = ids.map(id => documents.find(d => d.id === id)?.name || "Document"); onStartMultiDocChat(ids, names); setMultiSelectMode(false); setSelectedDocIds(new Set()); }} className="w-full gap-2 rounded-xl h-9 text-xs gradient-primary border-0" size="sm">
+            <Layers className="h-3.5 w-3.5" />Chat with {selectedDocIds.size} documents
           </Button>
         </div>
       )}
 
-      {/* Account / Plan Footer */}
+      {/* Footer */}
       <div className="border-t border-border p-3 space-y-2">
-        {/* Admin dashboard link */}
         {userRole === "admin" && onAdminClick && (
-          <button
-            onClick={onAdminClick}
-            className="flex items-center gap-2 w-full rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-          >
-            <Shield className="h-3.5 w-3.5" />
-            <span className="flex-1 text-left">Admin Dashboard</span>
-            <ChevronRight className="h-3 w-3" />
+          <button onClick={onAdminClick} className="flex items-center gap-2 w-full rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+            <Shield className="h-3.5 w-3.5" /><span className="flex-1 text-left">Admin Dashboard</span><ChevronRight className="h-3 w-3" />
           </button>
         )}
-
-        {/* Upgrade banner - only for free users */}
         {userRole === "free_user" && (
-          <button
-            onClick={onUpgradeClick}
-            className="flex items-center gap-2 w-full rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors"
-          >
-            <Crown className="h-3.5 w-3.5" />
-            <span className="flex-1 text-left">Upgrade to Pro</span>
-            <ChevronRight className="h-3 w-3" />
+          <button onClick={onUpgradeClick} className="flex items-center gap-2 w-full rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:from-amber-500/20 hover:to-orange-500/20 transition-colors">
+            <Crown className="h-3.5 w-3.5" /><span className="flex-1 text-left">Upgrade to Pro</span><ChevronRight className="h-3 w-3" />
           </button>
         )}
-
-        {/* Pro badge */}
         {userRole === "pro_user" && (
-          <div className="flex items-center gap-2 w-full rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <Crown className="h-3.5 w-3.5" />
-            <span>Pro Plan</span>
+          <div className="flex items-center gap-2 w-full rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <Crown className="h-3.5 w-3.5" /><span>Pro Plan</span>
           </div>
         )}
 
-        {/* User info */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {profilePicture ? (
             <img src={profilePicture} className="h-8 w-8 shrink-0 rounded-full object-cover shadow-sm" alt="" />
           ) : (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-[10px] font-bold shadow-sm">
-              {initials}
-            </div>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full gradient-primary text-primary-foreground text-[10px] font-bold shadow-sm">{initials}</div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="truncate text-xs font-medium text-foreground">
-              {profileName || user.email?.split("@")[0]}
-            </p>
-            <p className="truncate text-[10px] text-muted-foreground capitalize">
-              {userRole === "admin" ? "Administrator" : userRole === "pro_user" ? "Pro Plan" : "Free Plan"}
-            </p>
+            <p className="truncate text-xs font-medium text-foreground">{profileName || user.email?.split("@")[0]}</p>
+            <p className="truncate text-[10px] text-muted-foreground capitalize">{userRole === "admin" ? "Administrator" : userRole === "pro_user" ? "Pro Plan" : "Free Plan"}</p>
           </div>
-          <button
-            onClick={onSignOut}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            title="Sign out"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <button onClick={onSettingsClick} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Settings"><Settings className="h-3.5 w-3.5" /></button>
+          <button onClick={onSignOut} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Sign out"><LogOut className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     </motion.div>
   );
 }
 
-/* ── Reusable section header ── */
-function SectionHeader({
-  label,
-  icon,
-  count,
-  open,
-  onToggle,
-  action,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  count?: number;
-  open: boolean;
-  onToggle: () => void;
-  action?: React.ReactNode;
-}) {
+function SectionHeader({ label, icon, count, open, onToggle, action }: { label: string; icon: React.ReactNode; count?: number; open: boolean; onToggle: () => void; action?: React.ReactNode; }) {
   return (
-    <button
-      onClick={onToggle}
-      className="flex items-center gap-2 w-full px-2.5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-lg"
-    >
-      {icon}
-      <span className="flex-1 text-left">{label}</span>
-      {count !== undefined && count > 0 && (
-        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium normal-case">
-          {count}
-        </span>
-      )}
+    <button onClick={onToggle} className="flex items-center gap-2 w-full px-2.5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-lg">
+      {icon}<span className="flex-1 text-left">{label}</span>
+      {count !== undefined && count > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium normal-case">{count}</span>}
       {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
-      <ChevronDown
-        className={`h-3 w-3 transition-transform ${open ? "" : "-rotate-90"}`}
-      />
+      <ChevronDown className={`h-3 w-3 transition-transform ${open ? "" : "-rotate-90"}`} />
     </button>
   );
 }
