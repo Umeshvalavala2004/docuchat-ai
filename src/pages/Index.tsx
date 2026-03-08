@@ -4,27 +4,32 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
+import SettingsPage from "@/components/SettingsPage";
 import NotificationBell from "@/components/NotificationBell";
-import { FileText, Upload, Layers } from "lucide-react";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin";
+type View = "upload" | "chat" | "admin" | "settings";
 
 const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
   const { role, isAdmin, loading: roleLoading, refetch: refetchRole } = useUserRole(user?.id);
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(user?.id);
   const { profile } = useProfile(user?.id);
+  const isMobile = useIsMobile();
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -36,6 +41,7 @@ const Index = () => {
   const [highlightPage, setHighlightPage] = useState<number | null>(null);
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
+  const [mobilePanel, setMobilePanel] = useState<"pdf" | "chat">("chat");
 
   const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
     const prompts: Record<TextAction, string> = {
@@ -45,7 +51,8 @@ const Index = () => {
       ask: text,
     };
     setInjectedPrompt(prompts[action]);
-  }, []);
+    if (isMobile) setMobilePanel("chat");
+  }, [isMobile]);
 
   const handleUpgradeClick = async () => {
     try {
@@ -64,11 +71,19 @@ const Index = () => {
   if (loading || roleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-            <FileText className="h-6 w-6 text-primary-foreground animate-pulse" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+            <FileText className="h-7 w-7 text-primary-foreground animate-pulse" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Loading DocChat AI...</p>
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-semibold text-foreground">DocChat AI</p>
+            <p className="text-xs text-muted-foreground">Loading your workspace...</p>
+          </div>
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
         </motion.div>
       </div>
     );
@@ -139,6 +154,7 @@ const Index = () => {
     if (pageNumber) {
       setHighlightPage(pageNumber);
       setHighlightText(text || null);
+      if (isMobile) setMobilePanel("pdf");
     }
   };
 
@@ -148,33 +164,111 @@ const Index = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <Sidebar
-        user={user}
-        selectedDocId={selectedDocId}
-        onSelectDocument={handleSelectDocument}
-        onSelectChatSession={handleSelectChatSession}
-        onStartMultiDocChat={handleStartMultiDocChat}
-        onNewUpload={() => {
-          setView("upload");
-          setSelectedDocId(null);
-          setSelectedDocIds([]);
-          setChatSessionId(undefined);
-          setInitialMessages(undefined);
-        }}
-        onSignOut={signOut}
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        userRole={role}
-        onUpgradeClick={handleUpgradeClick}
-        onAdminClick={() => setView("admin")}
-        profileName={profile?.name}
-        profilePicture={profile?.profile_picture}
-      />
+      {(!isMobile || !sidebarCollapsed) && (
+        <Sidebar
+          user={user}
+          selectedDocId={selectedDocId}
+          onSelectDocument={handleSelectDocument}
+          onSelectChatSession={handleSelectChatSession}
+          onStartMultiDocChat={handleStartMultiDocChat}
+          onNewUpload={() => {
+            setView("upload");
+            setSelectedDocId(null);
+            setSelectedDocIds([]);
+            setChatSessionId(undefined);
+            setInitialMessages(undefined);
+          }}
+          onSignOut={signOut}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          userRole={role}
+          onUpgradeClick={handleUpgradeClick}
+          onAdminClick={() => setView("admin")}
+          onSettingsClick={() => setView("settings")}
+          profileName={profile?.name}
+          profilePicture={profile?.profile_picture}
+        />
+      )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top bar with notifications */}
-        <div className="flex items-center justify-end px-4 py-1.5 border-b border-border bg-card/50 backdrop-blur-sm">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Top bar */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border glass z-10">
+          {(isMobile && sidebarCollapsed) && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setSidebarCollapsed(false)}>
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+          )}
+          {!isMobile && sidebarCollapsed && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setSidebarCollapsed(false)}>
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {view === "chat" && selectedDocName && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg gradient-primary flex items-center justify-center">
+                  {selectedDocIds.length > 1 ? (
+                    <Layers className="h-3 w-3 text-primary-foreground" />
+                  ) : (
+                    <FileText className="h-3 w-3 text-primary-foreground" />
+                  )}
+                </div>
+                <span className="font-medium text-foreground truncate max-w-[200px]">
+                  {selectedDocIds.length > 1 ? `${selectedDocIds.length} Documents` : selectedDocName}
+                </span>
+              </div>
+            )}
+            {view === "upload" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
+                  <FileUp className="h-3 w-3 text-muted-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Upload Document</span>
+              </div>
+            )}
+            {view === "admin" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
+                  <Settings className="h-3 w-3 text-muted-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Admin Dashboard</span>
+              </div>
+            )}
+            {view === "settings" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
+                  <Settings className="h-3 w-3 text-muted-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Settings</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile toggle for PDF/Chat */}
+          {isMobile && showSplitView && (
+            <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+              <button
+                onClick={() => setMobilePanel("pdf")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  mobilePanel === "pdf" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setMobilePanel("chat")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  mobilePanel === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           <NotificationBell
             notifications={notifications}
             unreadCount={unreadCount}
@@ -186,14 +280,12 @@ const Index = () => {
         <div className="flex flex-1 overflow-hidden">
           <AnimatePresence mode="wait">
             {view === "admin" && isAdmin ? (
-              <motion.div
-                key="admin"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1"
-              >
+              <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <AdminDashboard onBack={() => setView("upload")} />
+              </motion.div>
+            ) : view === "settings" ? (
+              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} />
               </motion.div>
             ) : view === "upload" || !selectedDocId ? (
               <motion.div
@@ -209,9 +301,9 @@ const Index = () => {
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 200 }}
-                      className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-inner"
+                      className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-glow"
                     >
-                      <Upload className="h-9 w-9 text-primary" />
+                      <Upload className="h-9 w-9 text-primary-foreground" />
                     </motion.div>
                     <h2 className="text-2xl font-bold tracking-tight text-foreground">
                       Upload a document
@@ -234,38 +326,67 @@ const Index = () => {
                 exit={{ opacity: 0 }}
                 className="flex flex-1 overflow-hidden"
               >
-                <div className="flex-1 min-w-0 border-r border-border">
-                  <PdfViewer
-                    documentId={selectedDocId}
-                    fileName={selectedDocName}
-                    highlightPage={highlightPage}
-                    highlightText={highlightText}
-                    inline={true}
-                    onTextAction={handleTextAction}
-                  />
-                </div>
-                <div className="flex flex-col w-[45%] min-w-[340px] max-w-[600px]">
-                  <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 bg-card/50 backdrop-blur-sm">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                      <FileText className="h-3.5 w-3.5 text-primary" />
+                {isMobile ? (
+                  // Mobile: toggle between panels
+                  mobilePanel === "pdf" ? (
+                    <div className="flex-1 min-w-0">
+                      <PdfViewer
+                        documentId={selectedDocId}
+                        fileName={selectedDocName}
+                        highlightPage={highlightPage}
+                        highlightText={highlightText}
+                        inline={true}
+                        onTextAction={handleTextAction}
+                      />
                     </div>
-                    <span className="text-xs font-semibold text-foreground truncate flex-1">
-                      {selectedDocName}
-                    </span>
-                  </div>
-                  <ChatInterface
-                    key={`${selectedDocId}-${chatSessionId}`}
-                    documentId={selectedDocId}
-                    documentName={selectedDocName}
-                    userId={user.id}
-                    chatSessionId={chatSessionId}
-                    initialMessages={initialMessages}
-                    onChatSessionCreated={(id) => setChatSessionId(id)}
-                    onCitationClick={handleCitationClick}
-                    injectedPrompt={injectedPrompt}
-                    onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
-                  />
-                </div>
+                  ) : (
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <ChatInterface
+                        key={`${selectedDocId}-${chatSessionId}`}
+                        documentId={selectedDocId}
+                        documentName={selectedDocName}
+                        userId={user.id}
+                        chatSessionId={chatSessionId}
+                        initialMessages={initialMessages}
+                        onChatSessionCreated={(id) => setChatSessionId(id)}
+                        onCitationClick={handleCitationClick}
+                        injectedPrompt={injectedPrompt}
+                        onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
+                      />
+                    </div>
+                  )
+                ) : (
+                  // Desktop: resizable split
+                  <ResizablePanelGroup direction="horizontal" className="flex-1">
+                    <ResizablePanel defaultSize={55} minSize={30}>
+                      <PdfViewer
+                        documentId={selectedDocId}
+                        fileName={selectedDocName}
+                        highlightPage={highlightPage}
+                        highlightText={highlightText}
+                        inline={true}
+                        onTextAction={handleTextAction}
+                      />
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={45} minSize={25}>
+                      <div className="flex flex-col h-full">
+                        <ChatInterface
+                          key={`${selectedDocId}-${chatSessionId}`}
+                          documentId={selectedDocId}
+                          documentName={selectedDocName}
+                          userId={user.id}
+                          chatSessionId={chatSessionId}
+                          initialMessages={initialMessages}
+                          onChatSessionCreated={(id) => setChatSessionId(id)}
+                          onCitationClick={handleCitationClick}
+                          injectedPrompt={injectedPrompt}
+                          onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
+                        />
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -275,25 +396,6 @@ const Index = () => {
                 exit={{ opacity: 0 }}
                 className="flex-1 flex flex-col"
               >
-                <div className="flex items-center gap-3 border-b border-border px-5 py-3 bg-card/50 backdrop-blur-sm">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    {selectedDocIds.length > 1 ? (
-                      <Layers className="h-4 w-4 text-primary" />
-                    ) : (
-                      <FileText className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-foreground truncate block">
-                      {selectedDocIds.length > 1 ? `${selectedDocIds.length} Documents` : selectedDocName}
-                    </span>
-                    {selectedDocIds.length > 1 && (
-                      <span className="text-[10px] text-muted-foreground truncate block">
-                        {selectedDocName}
-                      </span>
-                    )}
-                  </div>
-                </div>
                 <ChatInterface
                   key={`${selectedDocId}-${selectedDocIds.join(",")}-${chatSessionId}`}
                   documentId={selectedDocId}
