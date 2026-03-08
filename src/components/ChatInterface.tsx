@@ -16,6 +16,8 @@ interface ChatInterfaceProps {
   initialMessages?: ChatMessage[];
   onChatSessionCreated?: (id: string) => void;
   onCitationClick?: (pageNumber: number | null, text?: string) => void;
+  injectedPrompt?: string;
+  onInjectedPromptConsumed?: () => void;
 }
 
 function CopyButton({ text }: { text: string }) {
