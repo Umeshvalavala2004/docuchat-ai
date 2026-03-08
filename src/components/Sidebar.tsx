@@ -467,7 +467,18 @@ export default function Sidebar({
                                   </div>
                                 </>
                               )}
-                              {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && <Progress value={status.progress} className="h-0.5 mt-1" />}
+                              {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Progress value={status.progress} className="h-0.5 flex-1" />
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, e); }}
+                                    className="p-0.5 rounded hover:bg-destructive/10 shrink-0"
+                                    title={t("delete")}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                </div>
+                              )}
                               {doc.reference_tag && (
                                 <span className="text-[10px] text-primary font-mono">#{doc.reference_tag}</span>
                               )}
