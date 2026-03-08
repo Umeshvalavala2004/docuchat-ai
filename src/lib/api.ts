@@ -279,14 +279,16 @@ export async function renameDocument(documentId: string, newName: string) {
   if (error) throw error;
 }
 
-export async function createChatSession(userId: string, documentId: string, title?: string) {
+export async function createChatSession(userId: string, documentId: string, title?: string, workspaceId?: string) {
+  const insertData: any = {
+    user_id: userId,
+    document_id: documentId,
+    title: title || "New Chat",
+  };
+  if (workspaceId) insertData.workspace_id = workspaceId;
   const { data, error } = await supabase
     .from("chat_sessions")
-    .insert({
-      user_id: userId,
-      document_id: documentId,
-      title: title || "New Chat",
-    })
+    .insert(insertData)
     .select()
     .single();
   if (error) throw error;
