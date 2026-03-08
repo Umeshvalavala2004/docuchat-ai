@@ -38,6 +38,7 @@ export async function streamChat({
   chatSessionId,
   history,
   modelId,
+  responseStyle,
   onSources,
   onMetrics,
   onDelta,
@@ -50,6 +51,7 @@ export async function streamChat({
   chatSessionId?: string;
   history: ChatMessage[];
   modelId?: string;
+  responseStyle?: string;
   onSources: (sources: Source[]) => void;
   onMetrics?: (metrics: RetrievalMetrics) => void;
   onDelta: (text: string) => void;
