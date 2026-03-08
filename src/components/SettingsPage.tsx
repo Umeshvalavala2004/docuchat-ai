@@ -294,8 +294,8 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                       <FileText className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-foreground">Interface_IQ</h3>
-                      <p className="text-xs text-muted-foreground">Powered by Interface_IQ</p>
+                      <h3 className="text-lg font-bold text-foreground">{branding.appName}</h3>
+                      <p className="text-xs text-muted-foreground">{branding.subtitle}</p>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
