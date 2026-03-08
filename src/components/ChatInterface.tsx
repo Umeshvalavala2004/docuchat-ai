@@ -443,9 +443,6 @@ export default function ChatInterface({
             )}
           </motion.div>
         )}
-            )}
-          </motion.div>
-        )}
 
         <div className="mx-auto max-w-3xl space-y-5">
           <AnimatePresence initial={false}>
