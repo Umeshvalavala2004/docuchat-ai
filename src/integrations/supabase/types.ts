@@ -82,6 +82,33 @@ export type Database = {
           },
         ]
       }
+      custom_tools: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          name: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_usage: {
         Row: {
           created_at: string
@@ -577,6 +604,27 @@ export type Database = {
           created_at?: string
           id?: string
           prompt?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recent_tools: {
+        Row: {
+          id: string
+          tool_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          tool_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          tool_id?: string
+          used_at?: string
           user_id?: string
         }
         Relationships: []
