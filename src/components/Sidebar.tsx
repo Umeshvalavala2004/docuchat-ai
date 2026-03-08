@@ -51,6 +51,12 @@ interface SidebarProps {
   brandingSubtitle?: string;
   brandingLogoUrl?: string | null;
   activeWorkspaceId?: string | null;
+  workspaces?: Workspace[];
+  activeWorkspace?: Workspace | null;
+  onSwitchWorkspace?: (id: string) => void;
+  onCreateWorkspace?: (name: string) => Promise<Workspace | null>;
+  onRenameWorkspace?: (id: string, name: string) => Promise<void>;
+  onDeleteWorkspace?: (id: string) => Promise<void>;
 }
 
 const sidebarTools = [
