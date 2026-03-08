@@ -6,29 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function generateEmbedding(text: string, apiKey: string): Promise<number[]> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input: text.slice(0, 8000),
-      model: "text-embedding-3-small",
-      dimensions: 768,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Embedding error ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -47,34 +24,52 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate embedding for the user's question
-    const queryEmbedding = await generateEmbedding(message, LOVABLE_API_KEY);
+    // Full-text keyword search on document chunks
+    const searchQuery = message.split(/\s+/).filter((w: string) => w.length > 2).join(' & ');
+    
+    let chunks: any[] = [];
 
-    // Hybrid search: semantic + keyword
-    const { data: chunks, error: searchError } = await supabase.rpc("hybrid_search", {
-      query_embedding: JSON.stringify(queryEmbedding),
-      query_text: message,
-      match_document_id: documentId,
-      match_count: 8,
-      semantic_weight: 0.7,
-      keyword_weight: 0.3,
-    });
+    // Try full-text search first
+    if (searchQuery) {
+      const { data, error } = await supabase
+        .from("document_chunks")
+        .select("id, content, chunk_index, page_number")
+        .eq("document_id", documentId)
+        .textSearch("content", searchQuery, { type: "plain" })
+        .limit(8);
 
-    if (searchError) {
-      console.error("Search error:", searchError);
-      throw new Error("Failed to search document: " + searchError.message);
+      if (!error && data && data.length > 0) {
+        chunks = data;
+      }
     }
 
-    const context = (chunks || [])
-      .map((c: any, i: number) => `[Source ${i + 1}] (chunk ${c.chunk_index}, score: ${c.combined_score?.toFixed(3)})\n${c.content}`)
+    // Fallback: if no keyword matches, get first chunks as context
+    if (chunks.length === 0) {
+      const { data, error } = await supabase
+        .from("document_chunks")
+        .select("id, content, chunk_index, page_number")
+        .eq("document_id", documentId)
+        .order("chunk_index", { ascending: true })
+        .limit(8);
+
+      if (!error && data) {
+        chunks = data;
+      }
+    }
+
+    if (chunks.length === 0) {
+      throw new Error("No document content found. The document may still be processing.");
+    }
+
+    const context = chunks
+      .map((c: any, i: number) => `[Source ${i + 1}] (chunk ${c.chunk_index})\n${c.content}`)
       .join("\n\n---\n\n");
 
-    const sources = (chunks || []).map((c: any) => ({
+    const sources = chunks.map((c: any) => ({
       id: c.id,
       content: c.content.slice(0, 200),
       chunk_index: c.chunk_index,
       page_number: c.page_number,
-      score: c.combined_score,
     }));
 
     // Build messages with history
@@ -89,7 +84,6 @@ ${context}`;
       { role: "system", content: systemPrompt },
     ];
 
-    // Add conversation history
     if (history && Array.isArray(history)) {
       for (const h of history.slice(-10)) {
         messages.push({ role: h.role, content: h.content });
@@ -129,14 +123,12 @@ ${context}`;
       throw new Error(`LLM error ${llmResponse.status}: ${errText}`);
     }
 
-    // Create a transform stream that injects sources at the end
+    // Stream with sources injected at the start
     const encoder = new TextEncoder();
     const reader = llmResponse.body!.getReader();
-    const decoder = new TextDecoder();
 
     const stream = new ReadableStream({
       async start(controller) {
-        // Send sources as a custom SSE event first
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ sources })}\n\n`));
 
         while (true) {
