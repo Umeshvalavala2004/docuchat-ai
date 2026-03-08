@@ -153,6 +153,14 @@ export default function ChatInterface({
 
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
+
+    // Check usage limits
+    const { allowed } = await checkAndIncrement();
+    if (!allowed) {
+      toast.error("You have reached your daily limit of 5 questions. Upgrade to Premium for unlimited access.", { duration: 5000 });
+      return;
+    }
+
     setInput("");
     setIsLoading(true);
     setResponseTime(null);
