@@ -319,24 +319,25 @@ export default function ChatInterface({
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
 
   return (
-    <div className="flex h-full flex-col bg-background/50">
+    <div className="flex h-full flex-col bg-background/50 overflow-hidden">
       {/* Model indicator + Performance bar */}
-      <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/50 bg-card/50">
-        <Badge variant="outline" className={`text-[10px] gap-1 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
+      <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 border-b border-border/50 bg-card/50 overflow-x-auto scrollbar-none">
+        <Badge variant="outline" className={`text-[10px] gap-1 shrink-0 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
           {modelConfig?.model_type === "local" ? <Monitor className="h-3 w-3" /> : <Cloud className="h-3 w-3" />}
-          {modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})
+          <span className="hidden sm:inline">{modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})</span>
+          <span className="sm:hidden">{modelConfig?.model_type === "local" ? "Local" : "Cloud"}</span>
         </Badge>
         {responseTime !== null && (
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0">
             <Timer className="h-3 w-3" />{(responseTime / 1000).toFixed(1)}s
           </span>
         )}
         {tokenCount !== null && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
             {tokenCount} tokens
           </span>
         )}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1 shrink-0">
           <ShareDialog
             type="document"
             name={documentName}
@@ -347,7 +348,7 @@ export default function ChatInterface({
             onUpdatePermission={docShareHook.updatePermission}
             trigger={
               <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <Share2 className="h-3 w-3" /> Share
+                <Share2 className="h-3 w-3" /><span className="hidden sm:inline">Share</span>
               </button>
             }
           />
@@ -361,7 +362,7 @@ export default function ChatInterface({
               onRemove={chatShareHook.removeShare}
               trigger={
                 <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                  <Share2 className="h-3 w-3" /> Share Chat
+                  <Share2 className="h-3 w-3" /><span className="hidden sm:inline">Share Chat</span>
                 </button>
               }
             />
