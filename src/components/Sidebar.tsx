@@ -28,15 +28,6 @@ import { toast } from "sonner";
 import UserProfile from "@/components/UserProfile";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import type { User } from "@supabase/supabase-js";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { getUserDocuments, getChatSessions, deleteDocument, deleteChatSession, renameDocument, formatFileSize } from "@/lib/api";
-import { toast } from "sonner";
-import UserProfile from "@/components/UserProfile";
-import DarkModeToggle from "@/components/DarkModeToggle";
-import type { User } from "@supabase/supabase-js";
 
 interface SidebarProps {
   user: User;
