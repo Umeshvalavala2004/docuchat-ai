@@ -83,6 +83,7 @@ export default function Sidebar({
   onUpgradeClick,
   onAdminClick,
   onSettingsClick,
+  onSearchClick,
   profileName,
   profilePicture,
 }: SidebarProps) {
