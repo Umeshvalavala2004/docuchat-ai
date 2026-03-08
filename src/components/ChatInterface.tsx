@@ -492,11 +492,11 @@ export default function ChatInterface({
                       ))}
                     </div>
                   )}
-                  <div className={`rounded-2xl px-4 py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
+                  <div className={`rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
                     {msg.role === "assistant" ? (
-                      <div className="prose prose-sm max-w-none dark:prose-invert text-foreground"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                      <div className="prose prose-sm max-w-none dark:prose-invert text-foreground break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                     ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                     )}
                     {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
                       <div className="mt-3 border-t border-border/30 pt-3">
