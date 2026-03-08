@@ -412,6 +412,7 @@ const Index = () => {
                 onDocumentUploaded={handleDocumentUploaded}
                 onToolProcess={handleToolProcess}
                 brandingAppName={branding.appName}
+                workspaceId={activeWorkspaceId}
               />
             ) : showSplitView ? (
               <motion.div
