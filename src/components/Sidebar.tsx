@@ -32,6 +32,7 @@ interface SidebarProps {
   onUpgradeClick?: () => void;
   onAdminClick?: () => void;
   onSettingsClick?: () => void;
+  onSearchClick?: () => void;
   profileName?: string | null;
   profilePicture?: string | null;
 }
@@ -82,6 +83,7 @@ export default function Sidebar({
   onUpgradeClick,
   onAdminClick,
   onSettingsClick,
+  onSearchClick,
   profileName,
   profilePicture,
 }: SidebarProps) {

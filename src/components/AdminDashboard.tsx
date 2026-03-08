@@ -5,11 +5,13 @@ import {
   Loader2, CheckCircle2, XCircle, AlertCircle,
   Users, FileText, MessageSquare, Crown, Ban,
   ArrowUpCircle, ArrowDownCircle, BarChart3, Eye,
+  TrendingUp, Activity, Search as SearchIcon, Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart } from "recharts";
 
 interface ProRequest {
   id: string;
@@ -35,7 +37,15 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminTab = "overview" | "users" | "requests";
+type AdminTab = "overview" | "analytics" | "users" | "requests";
+
+const CHART_COLORS = [
+  "hsl(222, 80%, 55%)",
+  "hsl(152, 60%, 42%)",
+  "hsl(38, 92%, 50%)",
+  "hsl(280, 60%, 55%)",
+  "hsl(0, 72%, 55%)",
+];
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [tab, setTab] = useState<AdminTab>("overview");
@@ -45,73 +55,90 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
-  // Stats
-  const [stats, setStats] = useState({ totalUsers: 0, freeUsers: 0, proUsers: 0, totalDocs: 0, totalChats: 0 });
+  const [stats, setStats] = useState({
+    totalUsers: 0, freeUsers: 0, proUsers: 0, adminUsers: 0,
+    totalDocs: 0, totalChats: 0, totalMessages: 0, totalHighlights: 0,
+  });
+  const [userGrowth, setUserGrowth] = useState<{ date: string; count: number }[]>([]);
+  const [docsByType, setDocsByType] = useState<{ name: string; value: number }[]>([]);
+  const [recentActivity, setRecentActivity] = useState<{ date: string; chats: number; docs: number }[]>([]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load requests
-      const { data: reqData } = await supabase
-        .from("pro_requests")
-        .select("*")
-        .order("requested_at", { ascending: false });
+      const { data: reqData } = await supabase.from("pro_requests").select("*").order("requested_at", { ascending: false });
       setRequests((reqData || []) as ProRequest[]);
 
-      // Load profiles
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      // Load roles for each user
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      // Load doc counts
-      const { data: docsData } = await supabase
-        .from("documents")
-        .select("user_id");
+      const { data: profileData } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      const { data: rolesData } = await supabase.from("user_roles").select("user_id, role");
+      const { data: docsData } = await supabase.from("documents").select("user_id, file_type, created_at");
+      const { count: chatCount } = await supabase.from("chat_sessions").select("id", { count: "exact", head: true });
+      const { count: messageCount } = await supabase.from("messages").select("id", { count: "exact", head: true });
+      const { count: highlightCount } = await supabase.from("highlights").select("id", { count: "exact", head: true });
 
       const docCounts: Record<string, number> = {};
-      (docsData || []).forEach((d: any) => {
-        docCounts[d.user_id] = (docCounts[d.user_id] || 0) + 1;
-      });
+      (docsData || []).forEach((d: any) => { docCounts[d.user_id] = (docCounts[d.user_id] || 0) + 1; });
 
       const roleMap: Record<string, string> = {};
-      (rolesData || []).forEach((r: any) => {
-        roleMap[r.user_id] = r.role;
-      });
+      (rolesData || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
 
       const enrichedUsers = (profileData || []).map((p: any) => ({
-        ...p,
-        role: roleMap[p.id] || "free_user",
-        doc_count: docCounts[p.id] || 0,
+        ...p, role: roleMap[p.id] || "free_user", doc_count: docCounts[p.id] || 0,
       }));
       setUsers(enrichedUsers);
 
-      // Stats
-      const { count: chatCount } = await supabase
-        .from("chat_sessions")
-        .select("id", { count: "exact", head: true });
+      const adminCount = enrichedUsers.filter((u: any) => u.role === "admin").length;
+      const proCount = enrichedUsers.filter((u: any) => u.role === "pro_user").length;
+      const freeCount = enrichedUsers.filter((u: any) => u.role === "free_user").length;
 
       setStats({
-        totalUsers: enrichedUsers.length,
-        freeUsers: enrichedUsers.filter((u: any) => u.role === "free_user").length,
-        proUsers: enrichedUsers.filter((u: any) => u.role === "pro_user").length,
-        totalDocs: docsData?.length || 0,
-        totalChats: chatCount || 0,
+        totalUsers: enrichedUsers.length, freeUsers: freeCount, proUsers: proCount, adminUsers: adminCount,
+        totalDocs: docsData?.length || 0, totalChats: chatCount || 0,
+        totalMessages: messageCount || 0, totalHighlights: highlightCount || 0,
       });
+
+      // User growth data (last 7 days)
+      const growth: Record<string, number> = {};
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        growth[d.toLocaleDateString("en", { month: "short", day: "numeric" })] = 0;
+      }
+      (profileData || []).forEach((p: any) => {
+        const d = new Date(p.created_at);
+        const key = d.toLocaleDateString("en", { month: "short", day: "numeric" });
+        if (growth[key] !== undefined) growth[key]++;
+      });
+      setUserGrowth(Object.entries(growth).map(([date, count]) => ({ date, count })));
+
+      // Docs by type
+      const typeCounts: Record<string, number> = {};
+      (docsData || []).forEach((d: any) => {
+        const ext = d.file_type?.split("/").pop() || "other";
+        typeCounts[ext] = (typeCounts[ext] || 0) + 1;
+      });
+      setDocsByType(Object.entries(typeCounts).map(([name, value]) => ({ name, value })));
+
+      // Recent activity
+      const activityMap: Record<string, { chats: number; docs: number }> = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const key = d.toLocaleDateString("en", { month: "short", day: "numeric" });
+        activityMap[key] = { chats: 0, docs: 0 };
+      }
+      (docsData || []).forEach((d: any) => {
+        const key = new Date(d.created_at).toLocaleDateString("en", { month: "short", day: "numeric" });
+        if (activityMap[key]) activityMap[key].docs++;
+      });
+      setRecentActivity(Object.entries(activityMap).map(([date, data]) => ({ date, ...data })));
+
     } catch (e) {
       console.error("Admin load error:", e);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const handleApprove = async (requestId: string) => {
     setProcessing(requestId);
@@ -120,9 +147,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       if (error) throw error;
       toast.success("Pro request approved!");
       await loadData();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to approve");
-    }
+    } catch (e: any) { toast.error(e.message || "Failed to approve"); }
     setProcessing(null);
   };
 
@@ -133,33 +158,27 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       if (error) throw error;
       toast.success("Pro request rejected");
       await loadData();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to reject");
-    }
+    } catch (e: any) { toast.error(e.message || "Failed to reject"); }
     setProcessing(null);
   };
 
-  const filteredRequests = requests.filter((r) =>
-    filter === "all" ? true : r.status === filter
-  );
-
+  const filteredRequests = requests.filter((r) => filter === "all" ? true : r.status === filter);
   const pendingCount = requests.filter((r) => r.status === "pending").length;
-
-  const getUserEmail = (userId: string) => {
-    const u = users.find((u) => u.id === userId);
-    return u?.email || userId.slice(0, 8) + "...";
-  };
-
-  const getUserName = (userId: string) => {
-    const u = users.find((u) => u.id === userId);
-    return u?.name || "Unknown";
-  };
+  const getUserEmail = (userId: string) => users.find((u) => u.id === userId)?.email || userId.slice(0, 8) + "...";
+  const getUserName = (userId: string) => users.find((u) => u.id === userId)?.name || "Unknown";
 
   const tabs: { id: AdminTab; label: string; icon: typeof BarChart3; badge?: number }[] = [
     { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "users", label: "Users", icon: Users },
     { id: "requests", label: "Requests", icon: Crown, badge: pendingCount },
   ];
+
+  const roleDistribution = [
+    { name: "Free", value: stats.freeUsers },
+    { name: "Pro", value: stats.proUsers },
+    { name: "Admin", value: stats.adminUsers },
+  ].filter((d) => d.value > 0);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -173,7 +192,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         </div>
         <div className="flex-1">
           <h1 className="text-lg font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-xs text-muted-foreground">Manage users, requests, and platform activity</p>
+          <p className="text-xs text-muted-foreground">Enterprise management & analytics</p>
         </div>
       </div>
 
@@ -184,9 +203,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-              tab === t.id
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             <t.icon className="h-3.5 w-3.5" />
@@ -210,20 +227,46 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             {/* ── OVERVIEW ── */}
             {tab === "overview" && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary" },
-                    { label: "Free Users", value: stats.freeUsers, icon: User, color: "text-muted-foreground" },
-                    { label: "Pro Users", value: stats.proUsers, icon: Crown, color: "text-amber-500" },
-                    { label: "Documents", value: stats.totalDocs, icon: FileText, color: "text-emerald-500" },
-                    { label: "Chat Sessions", value: stats.totalChats, icon: MessageSquare, color: "text-violet-500" },
+                    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary", bg: "bg-primary/10" },
+                    { label: "Documents", value: stats.totalDocs, icon: FileText, color: "text-success", bg: "bg-success/10" },
+                    { label: "Chat Sessions", value: stats.totalChats, icon: MessageSquare, color: "text-violet-500", bg: "bg-violet-500/10" },
+                    { label: "Messages", value: stats.totalMessages, icon: Activity, color: "text-warning", bg: "bg-warning/10" },
+                  ].map((s) => (
+                    <motion.div
+                      key={s.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-border bg-card p-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`h-8 w-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+                          <s.icon className={`h-4 w-4 ${s.color}`} />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{s.value.toLocaleString()}</p>
+                      <span className="text-[10px] text-muted-foreground font-medium">{s.label}</span>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Quick stats row 2 */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Pro Users", value: stats.proUsers, icon: Crown, color: "text-amber-500", bg: "bg-amber-500/10" },
+                    { label: "Free Users", value: stats.freeUsers, icon: User, color: "text-muted-foreground", bg: "bg-accent" },
+                    { label: "Highlights", value: stats.totalHighlights, icon: Tag, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    { label: "Pending Requests", value: pendingCount, icon: Clock, color: "text-destructive", bg: "bg-destructive/10" },
                   ].map((s) => (
                     <div key={s.label} className="rounded-xl border border-border bg-card p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <s.icon className={`h-4 w-4 ${s.color}`} />
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</span>
+                        <div className={`h-8 w-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+                          <s.icon className={`h-4 w-4 ${s.color}`} />
+                        </div>
                       </div>
                       <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                      <span className="text-[10px] text-muted-foreground font-medium">{s.label}</span>
                     </div>
                   ))}
                 </div>
@@ -251,13 +294,129 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           u.role === "admin" ? "bg-primary/10 text-primary" :
                           u.role === "pro_user" ? "bg-amber-500/10 text-amber-600" :
                           "bg-accent text-muted-foreground"
-                        }`}>
-                          {u.role?.replace("_", " ")}
-                        </span>
+                        }`}>{u.role?.replace("_", " ")}</span>
                       </div>
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ── ANALYTICS ── */}
+            {tab === "analytics" && (
+              <div className="space-y-4">
+                {/* Activity chart */}
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-4">Document Uploads (7 Days)</h3>
+                  <div className="h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={recentActivity}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                        <RechartsTooltip
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "0.75rem",
+                            fontSize: "11px",
+                          }}
+                        />
+                        <Area type="monotone" dataKey="docs" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.1)" strokeWidth={2} name="Documents" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Role distribution + User growth */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-4">User Roles</h3>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={roleDistribution}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={70}
+                            paddingAngle={4}
+                          >
+                            {roleDistribution.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip
+                            contentStyle={{
+                              background: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "0.75rem",
+                              fontSize: "11px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center gap-4 mt-2">
+                      {roleDistribution.map((d, i) => (
+                        <div key={d.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <div className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS[i] }} />
+                          {d.name} ({d.value})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-4">New Users (7 Days)</h3>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={userGrowth}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
+                          <RechartsTooltip
+                            contentStyle={{
+                              background: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "0.75rem",
+                              fontSize: "11px",
+                            }}
+                          />
+                          <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Users" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document types */}
+                {docsByType.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-4">Document Types</h3>
+                    <div className="h-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={docsByType} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
+                          <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={60} />
+                          <RechartsTooltip
+                            contentStyle={{
+                              background: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "0.75rem",
+                              fontSize: "11px",
+                            }}
+                          />
+                          <Bar dataKey="value" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} name="Count" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -294,9 +453,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="capitalize text-muted-foreground">{u.provider}</span>
-                          </td>
+                          <td className="px-4 py-3"><span className="capitalize text-muted-foreground">{u.provider}</span></td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium capitalize ${
                               u.role === "admin" ? "bg-primary/10 text-primary" :
@@ -309,12 +466,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{u.doc_count}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {new Date(u.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {u.last_login ? new Date(u.last_login).toLocaleDateString() : "—"}
-                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{u.last_login ? new Date(u.last_login).toLocaleDateString() : "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -326,22 +479,16 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
             {/* ── REQUESTS ── */}
             {tab === "requests" && (
               <div className="space-y-3">
-                {/* Filter */}
                 <div className="flex gap-1">
                   {(["pending", "approved", "rejected", "all"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors capitalize ${
-                        filter === f
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent/50"
+                        filter === f ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/50"
                       }`}
                     >
-                      {f}
-                      {f === "pending" && pendingCount > 0 && (
-                        <span className="ml-1 text-primary">({pendingCount})</span>
-                      )}
+                      {f}{f === "pending" && pendingCount > 0 && <span className="ml-1 text-primary">({pendingCount})</span>}
                     </button>
                   ))}
                 </div>
@@ -354,11 +501,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 ) : (
                   <div className="space-y-2">
                     {filteredRequests.map((req) => (
-                      <motion.div
-                        key={req.id}
-                        layout
-                        className="rounded-xl border border-border bg-card p-4"
-                      >
+                      <motion.div key={req.id} layout className="rounded-xl border border-border bg-card p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent">
@@ -368,43 +511,23 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                               <p className="text-xs font-medium text-foreground">{getUserName(req.user_id)}</p>
                               <p className="text-[10px] text-muted-foreground">{getUserEmail(req.user_id)}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Requested: {new Date(req.requested_at).toLocaleDateString()} at{" "}
-                                {new Date(req.requested_at).toLocaleTimeString()}
+                                Requested: {new Date(req.requested_at).toLocaleDateString()} at {new Date(req.requested_at).toLocaleTimeString()}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5">
                             {req.status === "pending" ? (
                               <>
-                                <Button
-                                  size="sm"
-                                  className="h-7 text-xs px-3 gap-1"
-                                  onClick={() => handleApprove(req.id)}
-                                  disabled={processing === req.id}
-                                >
-                                  {processing === req.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Check className="h-3 w-3" />
-                                  )}
-                                  Approve
+                                <Button size="sm" className="h-7 text-xs px-3 gap-1" onClick={() => handleApprove(req.id)} disabled={processing === req.id}>
+                                  {processing === req.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}Approve
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs px-3 gap-1 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleReject(req.id)}
-                                  disabled={processing === req.id}
-                                >
-                                  <X className="h-3 w-3" />
-                                  Reject
+                                <Button size="sm" variant="outline" className="h-7 text-xs px-3 gap-1 text-destructive hover:bg-destructive/10" onClick={() => handleReject(req.id)} disabled={processing === req.id}>
+                                  <X className="h-3 w-3" />Reject
                                 </Button>
                               </>
                             ) : (
                               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium capitalize ${
-                                req.status === "approved"
-                                  ? "bg-success/10 text-success"
-                                  : "bg-destructive/10 text-destructive"
+                                req.status === "approved" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                               }`}>
                                 {req.status === "approved" ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                                 {req.status}

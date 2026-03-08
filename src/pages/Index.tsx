@@ -12,9 +12,10 @@ import DocumentUpload from "@/components/DocumentUpload";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
+import EnterpriseSearch from "@/components/EnterpriseSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings";
+type View = "upload" | "chat" | "admin" | "settings" | "search";
 
 const Index = () => {
   const { user, loading, signUp, signIn, signOut } = useAuth();
@@ -185,6 +186,7 @@ const Index = () => {
           onUpgradeClick={handleUpgradeClick}
           onAdminClick={() => setView("admin")}
           onSettingsClick={() => setView("settings")}
+          onSearchClick={() => setView("search")}
           profileName={profile?.name}
           profilePicture={profile?.profile_picture}
         />
@@ -245,6 +247,14 @@ const Index = () => {
                 <span className="font-medium text-foreground">Settings</span>
               </div>
             )}
+            {view === "search" && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                </div>
+                <span className="font-medium text-foreground">Enterprise Search</span>
+              </div>
+            )}
           </div>
 
           {/* Mobile toggle for PDF/Chat */}
@@ -269,6 +279,10 @@ const Index = () => {
             </div>
           )}
 
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setView("search")} title="Enterprise Search">
+            <Search className="h-4 w-4" />
+          </Button>
+
           <NotificationBell
             notifications={notifications}
             unreadCount={unreadCount}
@@ -286,6 +300,14 @@ const Index = () => {
             ) : view === "settings" ? (
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} />
+              </motion.div>
+            ) : view === "search" ? (
+              <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <EnterpriseSearch
+                  userId={user.id}
+                  onSelectDocument={(docId, docName) => { handleSelectDocument(docId, docName); }}
+                  onClose={() => setView("upload")}
+                />
               </motion.div>
             ) : view === "upload" || !selectedDocId ? (
               <motion.div
