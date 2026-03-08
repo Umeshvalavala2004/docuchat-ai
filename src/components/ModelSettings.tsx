@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw, Copy } from "lucide-react";
+import { Search, Cloud, Monitor, Download, Check, Loader2, Cpu, Zap, AlertCircle, RefreshCw, Copy, Key, Eye, EyeOff, Trash2, ShieldCheck, ShieldX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { ModelConfig } from "@/hooks/useModelPreference";
+import { useApiKeys, type ApiKeyStatus } from "@/hooks/useApiKeys";
 
 interface ModelOption {
   id: string;
@@ -16,16 +18,22 @@ interface ModelOption {
   parameterSize?: string;
   available?: boolean;
   pulling?: boolean;
+  provider?: "gemini" | "openai" | "platform";
 }
 
 const CLOUD_MODELS: ModelOption[] = [
-  { id: "gemini-3-flash", name: "Gemini 3 Flash", type: "cloud", description: "Fast & capable. Default model for balanced speed and quality.", available: true },
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", type: "cloud", description: "Good multimodal + reasoning, lower cost than Pro.", available: true },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", type: "cloud", description: "Top-tier reasoning & large context. Best for complex tasks.", available: true },
-  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", type: "cloud", description: "Fastest & cheapest. Great for simple tasks.", available: true },
-  { id: "gpt-5", name: "GPT-5", type: "cloud", description: "Powerful reasoning, multimodal. Best for accuracy & nuance.", available: true },
-  { id: "gpt-5-mini", name: "GPT-5 Mini", type: "cloud", description: "Strong performance at lower cost. Good all-rounder.", available: true },
-  { id: "gpt-5-nano", name: "GPT-5 Nano", type: "cloud", description: "Speed & cost optimized. Great for high-volume tasks.", available: true },
+  { id: "gemini-3-flash", name: "Gemini 3 Flash", type: "cloud", description: "Fast & capable. Default model for balanced speed and quality.", available: true, provider: "platform" },
+  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", type: "cloud", description: "Good multimodal + reasoning, lower cost than Pro.", available: true, provider: "platform" },
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", type: "cloud", description: "Top-tier reasoning & large context. Best for complex tasks.", available: true, provider: "platform" },
+  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", type: "cloud", description: "Fastest & cheapest. Great for simple tasks.", available: true, provider: "platform" },
+  { id: "gpt-5", name: "GPT-5", type: "cloud", description: "Powerful reasoning, multimodal. Best for accuracy & nuance.", available: true, provider: "platform" },
+  { id: "gpt-5-mini", name: "GPT-5 Mini", type: "cloud", description: "Strong performance at lower cost. Good all-rounder.", available: true, provider: "platform" },
+  { id: "gpt-5-nano", name: "GPT-5 Nano", type: "cloud", description: "Speed & cost optimized. Great for high-volume tasks.", available: true, provider: "platform" },
+  // BYOK models
+  { id: "byok-gemini-pro", name: "Gemini Pro (Your Key)", type: "cloud", description: "Use your own Gemini API key. No platform limits.", provider: "gemini" },
+  { id: "byok-gemini-flash", name: "Gemini Flash (Your Key)", type: "cloud", description: "Fast Gemini model with your own API key.", provider: "gemini" },
+  { id: "byok-gpt-4o", name: "GPT-4o (Your Key)", type: "cloud", description: "Use your own OpenAI API key. Full GPT-4o access.", provider: "openai" },
+  { id: "byok-gpt-4o-mini", name: "GPT-4o Mini (Your Key)", type: "cloud", description: "Cost-effective OpenAI model with your key.", provider: "openai" },
 ];
 
 const POPULAR_LOCAL_MODELS: ModelOption[] = [
@@ -45,16 +53,19 @@ interface ModelSettingsProps {
   currentModel: ModelConfig;
   onModelChange: (model: ModelConfig) => void;
   isAdmin?: boolean;
+  userId?: string;
 }
 
-export default function ModelSettings({ currentModel, onModelChange, isAdmin }: ModelSettingsProps) {
+export default function ModelSettings({ currentModel, onModelChange, isAdmin, userId }: ModelSettingsProps) {
   const [search, setSearch] = useState("");
   const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline">("checking");
   const [localModels, setLocalModels] = useState<string[]>([]);
   const [pullingModel, setPullingModel] = useState<string | null>(null);
   const [ollamaEndpoint, setOllamaEndpoint] = useState(currentModel.ollama_endpoint || "http://localhost:11434");
+  const [activeTab, setActiveTab] = useState<"models" | "api-keys">("models");
 
-  // Check Ollama status
+  const { keys, loading: keysLoading, saveKey, validateKey, deleteKey, hasValidKey } = useApiKeys(userId || null);
+
   const checkOllama = useCallback(async () => {
     setOllamaStatus("checking");
     try {
@@ -83,7 +94,6 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
         body: JSON.stringify({ name: modelId }),
       });
       if (!resp.ok) throw new Error("Pull failed");
-      // Read the stream until done
       const reader = resp.body?.getReader();
       if (reader) {
         const decoder = new TextDecoder();
@@ -95,15 +105,13 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
             const lines = text.split("\n").filter(Boolean);
             for (const line of lines) {
               const parsed = JSON.parse(line);
-              if (parsed.status === "success") {
-                toast.success(`${modelId} downloaded successfully!`);
-              }
+              if (parsed.status === "success") toast.success(`${modelId} downloaded successfully!`);
             }
-          } catch { /* partial JSON */ }
+          } catch { /* partial */ }
         }
       }
       await checkOllama();
-    } catch (e) {
+    } catch {
       toast.error(`Failed to pull ${modelId}. Make sure Ollama is running.`);
     }
     setPullingModel(null);
@@ -119,6 +127,18 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
       return;
     }
 
+    // Check BYOK key requirement
+    if (option.provider === "gemini" && !hasValidKey("gemini")) {
+      toast.error("Please add a valid Gemini API key first.");
+      setActiveTab("api-keys");
+      return;
+    }
+    if (option.provider === "openai" && !hasValidKey("openai")) {
+      toast.error("Please add a valid OpenAI API key first.");
+      setActiveTab("api-keys");
+      return;
+    }
+
     const gatewayModelMap: Record<string, string> = {
       "gemini-3-flash": "google/gemini-3-flash-preview",
       "gemini-2.5-flash": "google/gemini-2.5-flash",
@@ -130,7 +150,7 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
     };
 
     onModelChange({
-      model_id: option.type === "cloud" ? (gatewayModelMap[option.id] || option.id) : option.id,
+      model_id: option.provider === "platform" ? (gatewayModelMap[option.id] || option.id) : option.id,
       model_name: option.name,
       model_type: option.type,
       ollama_endpoint: ollamaEndpoint,
@@ -143,11 +163,12 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
     ? allModels.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()) || m.id.toLowerCase().includes(search.toLowerCase()))
     : allModels;
 
-  const cloudFiltered = filtered.filter((m) => m.type === "cloud");
+  const platformModels = filtered.filter((m) => m.type === "cloud" && m.provider === "platform");
+  const byokModels = filtered.filter((m) => m.type === "cloud" && (m.provider === "gemini" || m.provider === "openai"));
   const localFiltered = filtered.filter((m) => m.type === "local");
 
   const isSelected = (option: ModelOption) => {
-    if (option.type === "cloud") {
+    if (option.provider === "platform") {
       const gatewayModelMap: Record<string, string> = {
         "gemini-3-flash": "google/gemini-3-flash-preview",
         "gemini-2.5-flash": "google/gemini-2.5-flash",
@@ -165,7 +186,7 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
   const isLocalInstalled = (modelId: string) => localModels.some((m) => m.startsWith(modelId.split(":")[0]));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Current model */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <div className="flex items-center gap-3">
@@ -183,148 +204,354 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search models (e.g. qwen, llama, mistral...)"
-          className="pl-10 rounded-xl h-10"
-        />
-      </div>
-
-      {/* Ollama status */}
-      <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Cpu className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs font-medium text-foreground">Ollama Server</span>
-          <div className={`h-2 w-2 rounded-full ${ollamaStatus === "online" ? "bg-success" : ollamaStatus === "offline" ? "bg-destructive" : "bg-warning animate-pulse"}`} />
-          <span className="text-[11px] text-muted-foreground">
-            {ollamaStatus === "online" ? `Online (${localModels.length} models)` : ollamaStatus === "offline" ? "Offline" : "Checking..."}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            value={ollamaEndpoint}
-            onChange={(e) => setOllamaEndpoint(e.target.value)}
-            className="h-7 text-[11px] w-48 rounded-lg"
-            placeholder="http://localhost:11434"
-          />
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={checkOllama}>
-            <RefreshCw className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-
-      <ScrollArea className="h-[400px]">
-        <div className="space-y-4">
-          {/* Cloud models */}
-          {cloudFiltered.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Cloud className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Cloud Models</span>
-              </div>
-              <div className="space-y-1.5">
-                {cloudFiltered.map((m) => (
-                  <ModelCard key={m.id} model={m} selected={isSelected(m)} onSelect={() => handleSelectModel(m)} />
-                ))}
-              </div>
-            </div>
+      {/* Tab switcher */}
+      <div className="flex gap-1 p-1 rounded-xl bg-accent/50 border border-border">
+        <button
+          onClick={() => setActiveTab("models")}
+          className={`flex-1 text-xs font-medium py-2 rounded-lg transition-all ${activeTab === "models" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Cpu className="h-3.5 w-3.5 inline mr-1.5" />Models
+        </button>
+        <button
+          onClick={() => setActiveTab("api-keys")}
+          className={`flex-1 text-xs font-medium py-2 rounded-lg transition-all ${activeTab === "api-keys" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Key className="h-3.5 w-3.5 inline mr-1.5" />API Keys
+          {keys.length > 0 && (
+            <Badge variant="outline" className="ml-1.5 text-[10px] h-4 px-1">{keys.length}</Badge>
           )}
+        </button>
+      </div>
 
-          {/* Local models */}
-          {localFiltered.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Monitor className="h-3.5 w-3.5 text-success" />
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Local Models (Ollama)</span>
-              </div>
-              {ollamaStatus === "offline" && (
-                <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 mb-3 space-y-3">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-foreground">Ollama is not running</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">Start the Ollama server to use local models.</p>
-                    </div>
+      {activeTab === "api-keys" ? (
+        <ApiKeysPanel keys={keys} loading={keysLoading} onSave={saveKey} onValidate={validateKey} onDelete={deleteKey} />
+      ) : (
+        <>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search models (e.g. qwen, llama, mistral...)"
+              className="pl-10 rounded-xl h-10"
+            />
+          </div>
+
+          {/* Ollama status */}
+          <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">Ollama Server</span>
+              <div className={`h-2 w-2 rounded-full ${ollamaStatus === "online" ? "bg-success" : ollamaStatus === "offline" ? "bg-destructive" : "bg-warning animate-pulse"}`} />
+              <span className="text-[11px] text-muted-foreground">
+                {ollamaStatus === "online" ? `Online (${localModels.length} models)` : ollamaStatus === "offline" ? "Offline" : "Checking..."}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={ollamaEndpoint}
+                onChange={(e) => setOllamaEndpoint(e.target.value)}
+                className="h-7 text-[11px] w-48 rounded-lg"
+                placeholder="http://localhost:11434"
+              />
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={checkOllama}>
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-4">
+              {/* Platform cloud models */}
+              {platformModels.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cloud className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Platform Models</span>
+                    <Badge variant="outline" className="text-[10px] h-4 border-primary/20 text-primary">Included</Badge>
                   </div>
-
-                  <div className="rounded-lg bg-background border border-border p-3 space-y-2">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Run this command in your terminal:</p>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs font-mono bg-accent/50 px-3 py-2 rounded-lg text-foreground select-all">ollama serve</code>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-[11px] rounded-lg shrink-0 gap-1"
-                        onClick={() => {
-                          navigator.clipboard.writeText("ollama serve");
-                          toast.success("Command copied to clipboard!");
-                        }}
-                      >
-                        <Copy className="h-3 w-3" />Copy
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-[11px] rounded-lg gap-1.5"
-                      onClick={checkOllama}
-                    >
-                      <RefreshCw className="h-3 w-3" />Retry Connection
-                    </Button>
-                    <a href="https://ollama.ai" target="_blank" rel="noopener">
-                      <Button variant="ghost" size="sm" className="h-8 text-[11px] rounded-lg gap-1.5 text-primary">
-                        <Download className="h-3 w-3" />Install Ollama
-                      </Button>
-                    </a>
+                  <div className="space-y-1.5">
+                    {platformModels.map((m) => (
+                      <ModelCard key={m.id} model={m} selected={isSelected(m)} onSelect={() => handleSelectModel(m)} />
+                    ))}
                   </div>
                 </div>
               )}
-              <div className="space-y-1.5">
-                {localFiltered.map((m) => (
-                  <ModelCard
-                    key={m.id}
-                    model={m}
-                    selected={isSelected(m)}
-                    installed={isLocalInstalled(m.id)}
-                    pulling={pullingModel === m.id}
-                    ollamaOnline={ollamaStatus === "online"}
-                    onSelect={() => handleSelectModel(m)}
-                    onPull={() => handlePullModel(m.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
-          {filtered.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-xs">
-              No models found matching "{search}"
+              {/* BYOK models */}
+              {byokModels.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Key className="h-3.5 w-3.5 text-warning" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Bring Your Own Key</span>
+                    <Badge variant="outline" className="text-[10px] h-4 border-warning/20 text-warning">BYOK</Badge>
+                  </div>
+                  <div className="space-y-1.5">
+                    {byokModels.map((m) => (
+                      <ModelCard
+                        key={m.id}
+                        model={m}
+                        selected={isSelected(m)}
+                        hasKey={m.provider ? hasValidKey(m.provider) : false}
+                        onSelect={() => handleSelectModel(m)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Local models */}
+              {localFiltered.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Monitor className="h-3.5 w-3.5 text-success" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Local Models (Ollama)</span>
+                  </div>
+                  {ollamaStatus === "offline" && (
+                    <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 mb-3 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">Ollama is not running</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">Start the Ollama server to use local models.</p>
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-background border border-border p-3 space-y-2">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Run this command in your terminal:</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-xs font-mono bg-accent/50 px-3 py-2 rounded-lg text-foreground select-all">ollama serve</code>
+                          <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg shrink-0 gap-1" onClick={() => { navigator.clipboard.writeText("ollama serve"); toast.success("Command copied!"); }}>
+                            <Copy className="h-3 w-3" />Copy
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" className="h-8 text-[11px] rounded-lg gap-1.5" onClick={checkOllama}>
+                          <RefreshCw className="h-3 w-3" />Retry Connection
+                        </Button>
+                        <a href="https://ollama.ai" target="_blank" rel="noopener">
+                          <Button variant="ghost" size="sm" className="h-8 text-[11px] rounded-lg gap-1.5 text-primary">
+                            <Download className="h-3 w-3" />Install Ollama
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    {localFiltered.map((m) => (
+                      <ModelCard
+                        key={m.id}
+                        model={m}
+                        selected={isSelected(m)}
+                        installed={isLocalInstalled(m.id)}
+                        pulling={pullingModel === m.id}
+                        ollamaOnline={ollamaStatus === "online"}
+                        onSelect={() => handleSelectModel(m)}
+                        onPull={() => handlePullModel(m.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {filtered.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-xs">No models found matching "{search}"</div>
+              )}
             </div>
-          )}
-        </div>
-      </ScrollArea>
+          </ScrollArea>
+        </>
+      )}
     </div>
   );
 }
 
+/* ───── API Keys Panel ───── */
+
+function ApiKeysPanel({
+  keys, loading, onSave, onValidate, onDelete,
+}: {
+  keys: ApiKeyStatus[];
+  loading: boolean;
+  onSave: (provider: string, key: string) => Promise<any>;
+  onValidate: (provider: string) => Promise<any>;
+  onDelete: (provider: string) => Promise<any>;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="h-9 w-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+            <Key className="h-4 w-4 text-warning" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Bring Your Own API Key</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Connect your own AI provider keys for unlimited access. Keys are encrypted and stored securely on the server.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <ApiKeyInput
+            provider="gemini"
+            label="Google Gemini"
+            placeholder="AIzaSy..."
+            status={keys.find((k) => k.provider === "gemini")}
+            loading={loading}
+            onSave={onSave}
+            onValidate={onValidate}
+            onDelete={onDelete}
+          />
+          <ApiKeyInput
+            provider="openai"
+            label="OpenAI"
+            placeholder="sk-..."
+            status={keys.find((k) => k.provider === "openai")}
+            loading={loading}
+            onSave={onSave}
+            onValidate={onValidate}
+            onDelete={onDelete}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-accent/30 p-3">
+        <p className="text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5 inline mr-1 text-success" />
+          Your API keys are encrypted server-side and never exposed in frontend code. Keys are only decrypted when making AI requests.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ApiKeyInput({
+  provider, label, placeholder, status, loading,
+  onSave, onValidate, onDelete,
+}: {
+  provider: string;
+  label: string;
+  placeholder: string;
+  status?: ApiKeyStatus;
+  loading: boolean;
+  onSave: (provider: string, key: string) => Promise<any>;
+  onValidate: (provider: string) => Promise<any>;
+  onDelete: (provider: string) => Promise<any>;
+}) {
+  const [keyValue, setKeyValue] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [validating, setValidating] = useState(false);
+
+  const handleSave = async () => {
+    if (!keyValue.trim()) return;
+    setSaving(true);
+    try {
+      const result = await onSave(provider, keyValue.trim());
+      if (result?.valid) {
+        toast.success(`${label} API key saved and validated!`);
+        setKeyValue("");
+      } else {
+        toast.error(`${label} key saved but validation failed: ${result?.error || "Invalid key"}`);
+      }
+    } catch {
+      toast.error(`Failed to save ${label} key`);
+    }
+    setSaving(false);
+  };
+
+  const handleValidate = async () => {
+    setValidating(true);
+    try {
+      const result = await onValidate(provider);
+      if (result?.valid) toast.success(`${label} key is valid!`);
+      else toast.error(`${label} key validation failed: ${result?.error || "Invalid"}`);
+    } catch {
+      toast.error("Validation failed");
+    }
+    setValidating(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await onDelete(provider);
+      toast.success(`${label} key removed`);
+    } catch {
+      toast.error("Failed to remove key");
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground">{label}</span>
+          {status && (
+            <Badge variant="outline" className={`text-[10px] h-4 gap-0.5 ${status.is_valid ? "border-success/30 text-success" : "border-destructive/30 text-destructive"}`}>
+              {status.is_valid ? <ShieldCheck className="h-2.5 w-2.5" /> : <ShieldX className="h-2.5 w-2.5" />}
+              {status.is_valid ? "Valid" : "Invalid"}
+            </Badge>
+          )}
+        </div>
+        {status && (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleValidate} disabled={validating}>
+              {validating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={handleDelete}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            type={showKey ? "text" : "password"}
+            value={keyValue}
+            onChange={(e) => setKeyValue(e.target.value)}
+            placeholder={status ? "••••••••••••• (saved)" : placeholder}
+            className="h-8 text-xs rounded-lg pr-8"
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey(!showKey)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+        <Button size="sm" className="h-8 text-[11px] rounded-lg" onClick={handleSave} disabled={!keyValue.trim() || saving}>
+          {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Key className="h-3 w-3 mr-1" />}
+          {status ? "Update" : "Save"}
+        </Button>
+      </div>
+
+      {status?.last_validated_at && (
+        <p className="text-[10px] text-muted-foreground">Last validated: {new Date(status.last_validated_at).toLocaleString()}</p>
+      )}
+    </div>
+  );
+}
+
+/* ───── Model Card ───── */
+
 function ModelCard({
-  model, selected, installed, pulling, ollamaOnline, onSelect, onPull,
+  model, selected, installed, pulling, ollamaOnline, hasKey, onSelect, onPull,
 }: {
   model: ModelOption;
   selected: boolean;
   installed?: boolean;
   pulling?: boolean;
   ollamaOnline?: boolean;
+  hasKey?: boolean;
   onSelect: () => void;
   onPull?: () => void;
 }) {
+  const isByok = model.provider === "gemini" || model.provider === "openai";
+
   return (
     <motion.button
       whileHover={{ scale: 1.005 }}
@@ -343,9 +570,11 @@ function ModelCard({
       }`}
     >
       <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
-        selected ? "gradient-primary" : "bg-accent"
+        selected ? "gradient-primary" : isByok ? "bg-warning/10" : "bg-accent"
       }`}>
-        {model.type === "cloud" ? (
+        {isByok ? (
+          <Key className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-warning"}`} />
+        ) : model.type === "cloud" ? (
           <Cloud className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
         ) : (
           <Monitor className={`h-4 w-4 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
@@ -356,6 +585,11 @@ function ModelCard({
           <span className={`text-xs font-semibold ${selected ? "text-primary" : "text-foreground"}`}>{model.name}</span>
           {model.parameterSize && (
             <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded text-muted-foreground">{model.parameterSize}</span>
+          )}
+          {isByok && hasKey !== undefined && (
+            <Badge variant="outline" className={`text-[10px] h-4 ${hasKey ? "border-success/30 text-success" : "border-muted-foreground/30 text-muted-foreground"}`}>
+              {hasKey ? "Key ✓" : "No Key"}
+            </Badge>
           )}
         </div>
         <p className="text-[11px] text-muted-foreground truncate">{model.description}</p>
