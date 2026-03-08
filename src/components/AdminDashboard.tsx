@@ -230,6 +230,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     setProcessing(null);
   };
 
+  const handleChangeRole = async (userId: string, newRole: string) => {
+    setChangingRole(userId);
+    try {
+      const { error } = await supabase.rpc("admin_change_user_role", {
+        _target_user_id: userId,
+        _new_role: newRole,
+      });
+      if (error) throw error;
+      toast.success(`Role updated to ${newRole.replace("_", " ")}`);
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to change role");
+    }
+    setChangingRole(null);
+  };
+
   const filteredRequests = requests.filter((r) => filter === "all" ? true : r.status === filter);
   const pendingCount = requests.filter((r) => r.status === "pending").length;
   const getUserEmail = (userId: string) => users.find((u) => u.id === userId)?.email || userId.slice(0, 8) + "...";
