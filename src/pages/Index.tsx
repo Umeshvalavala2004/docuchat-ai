@@ -27,7 +27,7 @@ import NotificationBell from "@/components/NotificationBell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import UserDashboard from "@/components/UserDashboard";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search, Sparkles, LayoutDashboard } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Settings, MessageSquare, FileUp, Search, Sparkles, LayoutDashboard } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
