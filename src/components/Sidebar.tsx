@@ -492,6 +492,51 @@ export default function Sidebar({
             )}
           </AnimatePresence>
 
+          {/* SHARED WITH ME */}
+          {(sharedDocs.length > 0 || sharedChats.length > 0) && (
+            <>
+              <SectionHeader label="Shared with me" icon={<Users className="h-3.5 w-3.5" />} count={sharedDocs.length + sharedChats.length} open={sharedOpen} onToggle={() => setSharedOpen(!sharedOpen)} />
+              <AnimatePresence initial={false}>
+                {sharedOpen && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                    <div className="space-y-0.5 py-0.5 px-1">
+                      {sharedDocs.length > 0 && (
+                        <>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1">Documents</p>
+                          {sharedDocs.map((doc) => (
+                            <button key={doc.id} onClick={() => onSelectDocument(doc.id, doc.name)} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-left hover:bg-accent/70 transition-all group">
+                              {getDocIcon(doc.name)}
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate text-xs font-medium text-foreground block">{doc.name}</span>
+                                <span className="text-[10px] text-muted-foreground">by {doc.owner_email?.split("@")[0]} • {doc.permission}</span>
+                              </div>
+                              <Share2 className="h-3 w-3 text-primary/50 shrink-0" />
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {sharedChats.length > 0 && (
+                        <>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1">Chats</p>
+                          {sharedChats.map((chat) => (
+                            <button key={chat.id} onClick={() => { if (chat.document_id) onSelectChatSession(chat.id, chat.document_id, chat.title); }} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-left hover:bg-accent/70 transition-all group">
+                              <MessageSquare className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate text-xs font-medium text-foreground block">{chat.title}</span>
+                                <span className="text-[10px] text-muted-foreground">by {chat.owner_email?.split("@")[0]} • {chat.permission}</span>
+                              </div>
+                              <Share2 className="h-3 w-3 text-primary/50 shrink-0" />
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
+
           {/* FOLDERS */}
           <SectionHeader label={t("folders")} icon={<Folder className="h-3.5 w-3.5" />} count={folders.length} open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)}
             action={<button onClick={(e) => { e.stopPropagation(); setCreatingFolder(true); setFoldersOpen(true); }} className="p-0.5 rounded hover:bg-accent transition-colors" title={t("folders")}><FolderPlus className="h-3.5 w-3.5 text-muted-foreground" /></button>}
