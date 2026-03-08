@@ -286,7 +286,6 @@ export default function ModelSettings({ currentModel, onModelChange, isAdmin }: 
                   </div>
                 </div>
               )}
-              )}
               <div className="space-y-1.5">
                 {localFiltered.map((m) => (
                   <ModelCard
