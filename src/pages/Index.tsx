@@ -15,7 +15,7 @@ import SettingsPage from "@/components/SettingsPage";
 import EnterpriseSearch from "@/components/EnterpriseSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp } from "lucide-react";
+import { FileText, Upload, Layers, PanelLeftClose, PanelLeftOpen, Settings, MessageSquare, FileUp, Search } from "lucide-react";
 import { getChatMessages } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
