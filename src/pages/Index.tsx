@@ -87,7 +87,10 @@ const Index = () => {
                 className="flex flex-1 flex-col items-center justify-center p-8"
               >
                 <div className="w-full max-w-lg">
-                  <div className="mb-8 text-center">
+                <div className="absolute top-4 right-4">
+                  <DarkModeToggle />
+                </div>
+                <div className="mb-8 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                       <Upload className="h-8 w-8 text-primary" />
                     </div>
