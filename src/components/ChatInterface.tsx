@@ -15,6 +15,7 @@ interface ChatInterfaceProps {
   chatSessionId?: string;
   initialMessages?: ChatMessage[];
   onChatSessionCreated?: (id: string) => void;
+  onCitationClick?: (pageNumber: number | null, text?: string) => void;
 }
 
 function CopyButton({ text }: { text: string }) {
