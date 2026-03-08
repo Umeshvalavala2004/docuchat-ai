@@ -26,6 +26,13 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
   const [tab, setTab] = useState<Tab>("general");
   const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
+  const [responseStyle, setResponseStyle] = useState<string>(() => localStorage.getItem("responseStyle") || "Detailed");
+
+  const handleResponseStyleChange = (style: string) => {
+    setResponseStyle(style);
+    localStorage.setItem("responseStyle", style);
+    toast.success(`Response style set to ${style}`);
+  };
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
     const saved = localStorage.getItem("theme");
@@ -193,8 +200,9 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                     {["Concise", "Detailed", "Academic"].map((s) => (
                       <button
                         key={s}
+                        onClick={() => handleResponseStyleChange(s)}
                         className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                          s === "Detailed" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
+                          s === responseStyle ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
                         }`}
                       >
                         {s}

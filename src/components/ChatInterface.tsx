@@ -252,9 +252,10 @@ export default function ChatInterface({
       });
     } else {
       // Cloud model via edge function
+      const responseStyle = localStorage.getItem("responseStyle") || "Detailed";
       await streamChat({
         message: effectiveMessage, documentId: effectiveDocId, documentIds: effectiveDocIds, chatSessionId: currentSessionId, history: messages,
-        modelId: modelConfig?.model_id,
+        modelId: modelConfig?.model_id, responseStyle,
         onSources: (s) => { sources = s; setActiveSources(s); },
         onMetrics: (m) => { setActiveMetrics(m); },
         onDelta: (chunk) => {
