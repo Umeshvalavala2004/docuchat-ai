@@ -4,9 +4,8 @@ import {
   FileText, MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight,
   Loader2, Clock, CheckCircle2, AlertCircle, Pencil, Check, X,
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
-  ChevronDown, PenLine, Shield, Youtube, FlaskConical, Globe,
-  GitCompare, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
-  Link2, Zap,
+  ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
+  Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench, Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,13 +53,13 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; progr
   error: { icon: <AlertCircle className="h-3.5 w-3.5 text-destructive" />, label: "Error", progress: 0 },
 };
 
-const tools = [
-  { id: "ai-writer", label: "AI Writer", icon: PenLine, color: "text-emerald-500" },
-  { id: "ai-detector", label: "AI Detector", icon: Shield, color: "text-amber-500" },
-  { id: "youtube-chat", label: "YouTube Chat", icon: Youtube, color: "text-red-500" },
-  { id: "research", label: "Research Assistant", icon: FlaskConical, color: "text-violet-500" },
-  { id: "web-chat", label: "Web Page Chat", icon: Globe, color: "text-sky-500" },
-  { id: "doc-compare", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
+const sidebarTools = [
+  { id: "diffchecker-pdf", label: "Document Compare", icon: GitCompare, color: "text-orange-500" },
+  { id: "diffchecker-text", label: "Text Diff Checker", icon: FileText, color: "text-blue-500" },
+  { id: "json-formatter", label: "JSON Formatter", icon: Braces, color: "text-emerald-500" },
+  { id: "stackedit", label: "Markdown Editor", icon: PenLine, color: "text-violet-500" },
+  { id: "beautifier", label: "Code Beautifier", icon: Code2, color: "text-cyan-500" },
+  { id: "regex101", label: "Regex Tester", icon: Regex, color: "text-pink-500" },
 ];
 
 function getDocIcon(name: string) {
@@ -505,7 +504,7 @@ export default function Sidebar({
                   <button onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
                     <Sparkles className="h-3.5 w-3.5" /> Open All Tools
                   </button>
-                  {tools.map((tool) => (
+                  {sidebarTools.map((tool) => (
                     <button key={tool.id} onClick={onToolsClick} className="flex items-center gap-2.5 w-full rounded-xl px-2.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/70 transition-colors">
                       <tool.icon className={`h-3.5 w-3.5 ${tool.color}`} />{tool.label}
                     </button>
