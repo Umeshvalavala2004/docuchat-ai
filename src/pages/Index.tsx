@@ -47,6 +47,10 @@ const Index = () => {
   const { model: activeModel, updateModel } = useModelPreference(user?.id || null);
   const { usage } = useDailyUsage(user?.id || null);
   const { branding, copyright } = useBranding();
+  const {
+    workspaces, activeWorkspace, activeWorkspaceId,
+    switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace,
+  } = useWorkspaces(user?.id || null);
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
