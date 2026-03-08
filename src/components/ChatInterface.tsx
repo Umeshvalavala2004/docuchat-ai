@@ -183,7 +183,7 @@ export default function ChatInterface({
   }, [injectedPrompt]);
 
   useEffect(() => {
-    if (messages.length === 0 && documentId) {
+    if (messages.length === 0 && documentId && docStatus === "ready") {
       setLoadingQuestions(true);
       Promise.all([getSuggestedQuestions(documentId), getKeyPoints(documentId)])
         .then(([q, kp]) => {
@@ -191,7 +191,7 @@ export default function ChatInterface({
           setKeyPoints(kp);
         }).finally(() => setLoadingQuestions(false));
     }
-  }, [documentId, messages.length]);
+  }, [documentId, messages.length, docStatus]);
 
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [tokenCount, setTokenCount] = useState<number | null>(null);
