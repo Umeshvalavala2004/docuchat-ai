@@ -300,6 +300,14 @@ const Index = () => {
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} />
               </motion.div>
+            ) : view === "search" ? (
+              <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
+                <EnterpriseSearch
+                  userId={user.id}
+                  onSelectDocument={(docId, docName) => { handleSelectDocument(docId, docName); }}
+                  onClose={() => setView("upload")}
+                />
+              </motion.div>
             ) : view === "upload" || !selectedDocId ? (
               <motion.div
                 key="upload"
