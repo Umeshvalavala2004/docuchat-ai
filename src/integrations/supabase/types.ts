@@ -92,6 +92,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          chunk_count: number | null
           created_at: string
           file_path: string
           file_size: number
@@ -105,6 +106,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          chunk_count?: number | null
           created_at?: string
           file_path: string
           file_size?: number
@@ -118,6 +120,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          chunk_count?: number | null
           created_at?: string
           file_path?: string
           file_size?: number
@@ -128,6 +131,30 @@ export type Database = {
           status?: string
           summary?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          rating: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          rating: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          rating?: string
           user_id?: string
         }
         Relationships: []

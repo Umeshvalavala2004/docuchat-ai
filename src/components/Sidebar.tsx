@@ -15,6 +15,7 @@ import {
   Check,
   X,
   Search,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,11 +41,26 @@ interface SidebarProps {
 type Tab = "documents" | "history";
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
-  pending: { icon: <Clock className="h-3 w-3 text-warning" />, label: "Pending", progress: 10 },
-  processing: { icon: <Loader2 className="h-3 w-3 text-primary animate-spin" />, label: "Processing", progress: 60 },
+  pending: { icon: <Clock className="h-3 w-3 text-warning" />, label: "Uploading", progress: 15 },
+  processing: { icon: <Loader2 className="h-3 w-3 text-primary animate-spin" />, label: "Processing", progress: 45 },
+  indexing: { icon: <Database className="h-3 w-3 text-primary animate-pulse-soft" />, label: "Indexing", progress: 75 },
   ready: { icon: <CheckCircle2 className="h-3 w-3 text-success" />, label: "Ready", progress: 100 },
   error: { icon: <AlertCircle className="h-3 w-3 text-destructive" />, label: "Error", progress: 0 },
 };
+
+// Skeleton loader
+function DocSkeleton() {
+  return (
+    <div className="space-y-2 py-2">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-xl bg-muted/50 p-3 animate-pulse-soft">
+          <div className="h-3 w-3/4 rounded bg-muted mb-2" />
+          <div className="h-2 w-1/2 rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Sidebar({
   user,
@@ -256,9 +272,7 @@ export default function Sidebar({
               exit={{ opacity: 0 }}
             >
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
+                <DocSkeleton />
               ) : filteredDocs.length === 0 ? (
                 <div className="flex flex-col items-center py-8 px-4 text-center">
                   <div className="rounded-xl bg-muted p-3 mb-3">
@@ -275,6 +289,7 @@ export default function Sidebar({
                     return (
                       <motion.div
                         key={doc.id}
+                        layout
                         className={`group rounded-xl transition-all ${
                           selectedDocId === doc.id
                             ? "bg-primary/10 ring-1 ring-primary/20"
@@ -314,22 +329,32 @@ export default function Sidebar({
                                 {doc.name}
                               </span>
                             )}
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                               <span className="text-[10px] text-muted-foreground">
                                 {formatFileSize(doc.file_size)}
                               </span>
-                              {doc.status !== "ready" && (
+                              {doc.chunk_count > 0 && (
                                 <span className="text-[10px] text-muted-foreground">
-                                  • {status.label}
+                                  • {doc.chunk_count} chunks
                                 </span>
                               )}
-                              {doc.page_count && (
+                              {doc.page_count > 0 && (
                                 <span className="text-[10px] text-muted-foreground">
                                   • {doc.page_count} pages
                                 </span>
                               )}
+                              {doc.status !== "ready" && (
+                                <span className="text-[10px] text-primary font-medium">
+                                  • {status.label}
+                                </span>
+                              )}
                             </div>
-                            {(doc.status === "pending" || doc.status === "processing") && (
+                            {doc.summary && doc.status === "ready" && (
+                              <p className="text-[10px] text-muted-foreground/70 mt-1 line-clamp-1">
+                                {doc.summary}
+                              </p>
+                            )}
+                            {(doc.status === "pending" || doc.status === "processing" || doc.status === "indexing") && (
                               <Progress value={status.progress} className="h-1 mt-1.5" />
                             )}
                           </div>
@@ -381,6 +406,7 @@ export default function Sidebar({
                   {filteredSessions.map((session) => (
                     <motion.div
                       key={session.id}
+                      layout
                       className="group flex items-center rounded-xl hover:bg-accent transition-all"
                     >
                       <button

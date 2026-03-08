@@ -13,17 +13,32 @@ async function extractTextFromPDFWithUnpdf(bytes: Uint8Array): Promise<string> {
   return text;
 }
 
+function cleanText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[^\S\n]+$/gm, '')
+    .trim();
+}
+
 function chunkText(text: string, chunkSize = 500, overlap = 100): { content: string; index: number }[] {
   const words = text.split(/\s+/);
   const chunks: { content: string; index: number }[] = [];
   let i = 0;
   let chunkIndex = 0;
+  const seen = new Set<string>();
 
   while (i < words.length) {
     const chunk = words.slice(i, i + chunkSize).join(' ');
     if (chunk.trim().length > 10) {
-      chunks.push({ content: chunk, index: chunkIndex });
-      chunkIndex++;
+      // Deduplicate: skip chunks that are >90% similar to previous
+      const fingerprint = chunk.slice(0, 200);
+      if (!seen.has(fingerprint)) {
+        chunks.push({ content: chunk, index: chunkIndex });
+        chunkIndex++;
+        seen.add(fingerprint);
+      }
     }
     i += chunkSize - overlap;
   }
@@ -83,7 +98,12 @@ serve(async (req) => {
       throw new Error("Could not extract text from document. The PDF may be scanned/image-based.");
     }
 
+    // Clean text
+    fullText = cleanText(fullText);
     console.log(`Extracted ${fullText.length} characters from document`);
+
+    // Update to indexing status
+    await supabase.from("documents").update({ status: "indexing" }).eq("id", documentId);
 
     // Chunk the text
     const chunks = chunkText(fullText, 500, 100);
@@ -121,7 +141,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: "Summarize this document in 2-3 sentences." },
+            { role: "system", content: "Summarize this document in 2-3 sentences. Be concise and informative." },
             { role: "user", content: fullText.slice(0, 4000) },
           ],
         }),
@@ -139,6 +159,7 @@ serve(async (req) => {
       status: "ready",
       summary,
       page_count: Math.ceil(fullText.length / 3000),
+      chunk_count: chunkRecords.length,
     }).eq("id", documentId);
 
     return new Response(JSON.stringify({
