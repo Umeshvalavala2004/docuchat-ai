@@ -150,7 +150,7 @@ export default function Sidebar({
       loadHistory();
     }, 5000);
     return () => clearInterval(interval);
-  }, [user.id]);
+  }, [user.id, activeWorkspaceId]);
 
   const handleDelete = async (docId: string, e: React.MouseEvent) => {
     e.stopPropagation();
