@@ -36,6 +36,7 @@ export async function streamChat({
   documentIds,
   chatSessionId,
   history,
+  modelId,
   onSources,
   onMetrics,
   onDelta,
@@ -47,6 +48,7 @@ export async function streamChat({
   documentIds?: string[];
   chatSessionId?: string;
   history: ChatMessage[];
+  modelId?: string;
   onSources: (sources: Source[]) => void;
   onMetrics?: (metrics: RetrievalMetrics) => void;
   onDelta: (text: string) => void;
