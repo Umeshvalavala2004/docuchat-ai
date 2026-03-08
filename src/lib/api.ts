@@ -224,7 +224,7 @@ export async function streamChatLocal({
   }
 }
 
-export async function uploadDocument(file: File, userId: string) {
+export async function uploadDocument(file: File, userId: string, workspaceId?: string) {
   const filePath = `${userId}/${crypto.randomUUID()}-${file.name}`;
 
   const { error: uploadError } = await supabase.storage
@@ -232,16 +232,19 @@ export async function uploadDocument(file: File, userId: string) {
     .upload(filePath, file);
   if (uploadError) throw uploadError;
 
+  const insertData: any = {
+    user_id: userId,
+    name: file.name,
+    file_path: filePath,
+    file_size: file.size,
+    file_type: file.type || file.name.split(".").pop() || "unknown",
+    status: "pending",
+  };
+  if (workspaceId) insertData.workspace_id = workspaceId;
+
   const { data: doc, error: docError } = await supabase
     .from("documents")
-    .insert({
-      user_id: userId,
-      name: file.name,
-      file_path: filePath,
-      file_size: file.size,
-      file_type: file.type || file.name.split(".").pop() || "unknown",
-      status: "pending",
-    })
+    .insert(insertData)
     .select()
     .single();
   if (docError) throw docError;
