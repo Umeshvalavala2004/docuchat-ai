@@ -14,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart } from "recharts";
 import { useBranding } from "@/hooks/useBranding";
 
@@ -64,6 +68,25 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingUser(userId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const res = await supabase.functions.invoke("delete-user", {
+        body: { target_user_id: userId },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success("User deleted successfully");
+      await loadData();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete user");
+    }
+    setDeletingUser(null);
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -518,6 +541,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Documents</th>
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Joined</th>
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Last Login</th>
+                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -559,6 +583,37 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           <td className="px-4 py-3 text-muted-foreground">{u.doc_count}</td>
                           <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
                           <td className="px-4 py-3 text-muted-foreground">{u.last_login ? new Date(u.last_login).toLocaleDateString() : "—"}</td>
+                          <td className="px-4 py-3">
+                            {u.role !== "admin" ? (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-1" disabled={deletingUser === u.id}>
+                                    {deletingUser === u.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                                    Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete <strong>{u.name || u.email}</strong>'s account and all associated data. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => handleDeleteUser(u.id)}
+                                    >
+                                      Delete Account
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">—</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
