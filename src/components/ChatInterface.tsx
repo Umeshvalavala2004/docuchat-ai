@@ -160,6 +160,19 @@ export default function ChatInterface({
     load();
   }, [userId]);
 
+  // Poll document status when not ready
+  useEffect(() => {
+    if (!documentId) return;
+    const checkStatus = async () => {
+      const { data } = await supabase.from("documents").select("status").eq("id", documentId).single();
+      if (data) setDocStatus(data.status);
+    };
+    checkStatus();
+    if (docStatus === "ready" || docStatus === "error") return;
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, [documentId, docStatus]);
+
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
