@@ -36,6 +36,8 @@ interface SidebarProps {
   onAdminClick?: () => void;
   onSettingsClick?: () => void;
   onSearchClick?: () => void;
+  onToolsClick?: () => void;
+  onInsertPrompt?: (prompt: string) => void;
   profileName?: string | null;
   profilePicture?: string | null;
   usageInfo?: { questionsAsked: number; maxQuestions: number; isPremium: boolean; remaining: number };
