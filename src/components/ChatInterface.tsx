@@ -130,6 +130,28 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Mention system state
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [allDocuments, setAllDocuments] = useState<MentionableDocument[]>([]);
+  const [mentionedDocs, setMentionedDocs] = useState<MentionableDocument[]>([]);
+
+  // Load user documents for mention system
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("documents")
+        .select("id, name, reference_tag, is_favorite, is_pinned, file_type")
+        .eq("user_id", userId)
+        .eq("status", "ready")
+        .order("is_pinned", { ascending: false })
+        .order("is_favorite", { ascending: false });
+      if (data) setAllDocuments(data as MentionableDocument[]);
+    };
+    load();
+  }, [userId]);
+
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
