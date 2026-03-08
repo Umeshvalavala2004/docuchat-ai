@@ -211,6 +211,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "users", label: "Users", icon: Users },
     { id: "requests", label: "Requests", icon: Crown, badge: pendingCount },
+    { id: "branding", label: "Branding", icon: Palette },
   ];
 
   const roleDistribution = [
