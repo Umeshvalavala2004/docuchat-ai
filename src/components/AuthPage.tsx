@@ -174,8 +174,6 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
                 </div>
               </>
             )}
-              </div>
-            </div>
 
             {isForgot ? (
               forgotSent ? (
