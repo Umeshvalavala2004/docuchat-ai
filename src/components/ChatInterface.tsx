@@ -359,6 +359,16 @@ export default function ChatInterface({
                   </div>
                 )}
                 <div className="max-w-[85%] min-w-0">
+                  {/* Mentioned docs tag above user message */}
+                  {msg.role === "user" && msg.mentionedDocs && msg.mentionedDocs.length > 0 && (
+                    <div className="flex items-center gap-1 mb-1 justify-end flex-wrap">
+                      {msg.mentionedDocs.map((tag, j) => (
+                        <Badge key={j} variant="secondary" className="text-[9px] gap-0.5 py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
+                          <Hash className="h-2 w-2" />{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <div className={`rounded-2xl px-4 py-3 ${msg.role === "user" ? "gradient-primary text-primary-foreground shadow-sm" : "bg-card border border-border shadow-elegant"}`}>
                     {msg.role === "assistant" ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert text-foreground"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
