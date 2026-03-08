@@ -13,6 +13,7 @@ import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
+import HomeHero from "@/components/HomeHero";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
