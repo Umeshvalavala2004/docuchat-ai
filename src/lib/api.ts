@@ -295,12 +295,14 @@ export async function createChatSession(userId: string, documentId: string, titl
   return data;
 }
 
-export async function getChatSessions(userId: string) {
-  const { data, error } = await supabase
+export async function getChatSessions(userId: string, workspaceId?: string) {
+  let query = supabase
     .from("chat_sessions")
     .select("*, documents(name)")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
