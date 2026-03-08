@@ -267,6 +267,26 @@ export default function Sidebar({
         </button>
       </div>
 
+      {/* Multi-select toggle */}
+      {tab === "documents" && documents.filter(d => d.status === "ready").length > 1 && (
+        <div className="px-3 pb-1">
+          <button
+            onClick={() => {
+              setMultiSelectMode(!multiSelectMode);
+              setSelectedDocIds(new Set());
+            }}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors w-full justify-center ${
+              multiSelectMode
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            }`}
+          >
+            <Layers className="h-3 w-3" />
+            {multiSelectMode ? "Cancel multi-select" : "Select multiple"}
+          </button>
+        </div>
+      )
+
       {/* Content */}
       <ScrollArea className="flex-1 px-3">
         <AnimatePresence mode="wait">
