@@ -13,7 +13,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
-    const { message, documentId, documentIds, chatSessionId, history } = await req.json();
+    const { message, documentId, documentIds, chatSessionId, history, modelId } = await req.json();
     if (!message) throw new Error("message is required");
 
     const docIds: string[] = documentIds || (documentId ? [documentId] : []);
@@ -250,7 +250,7 @@ ${context}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: modelId || "google/gemini-3-flash-preview",
         messages,
         stream: true,
       }),

@@ -36,6 +36,7 @@ export async function streamChat({
   documentIds,
   chatSessionId,
   history,
+  modelId,
   onSources,
   onMetrics,
   onDelta,
@@ -47,6 +48,7 @@ export async function streamChat({
   documentIds?: string[];
   chatSessionId?: string;
   history: ChatMessage[];
+  modelId?: string;
   onSources: (sources: Source[]) => void;
   onMetrics?: (metrics: RetrievalMetrics) => void;
   onDelta: (text: string) => void;
@@ -65,6 +67,7 @@ export async function streamChat({
         documentId,
         documentIds,
         chatSessionId,
+        modelId,
         history: history.map((m) => ({ role: m.role, content: m.content })),
       }),
     });
@@ -142,6 +145,78 @@ export async function streamChat({
     onDone();
   } catch (e) {
     onError(e instanceof Error ? e.message : "Unknown error");
+  }
+}
+
+export async function streamChatLocal({
+  message,
+  modelId,
+  ollamaEndpoint,
+  context,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  message: string;
+  modelId: string;
+  ollamaEndpoint: string;
+  context?: string;
+  onDelta: (text: string) => void;
+  onDone: (metrics: { totalDuration?: number; evalCount?: number }) => void;
+  onError: (error: string) => void;
+}) {
+  try {
+    const prompt = context
+      ? `Based on the following document context, answer the question.\n\nCONTEXT:\n${context}\n\nQUESTION: ${message}`
+      : message;
+
+    const resp = await fetch(`${ollamaEndpoint}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: modelId, prompt, stream: true }),
+    });
+
+    if (!resp.ok) {
+      if (resp.status === 404) {
+        onError(`Model "${modelId}" not found. Pull it first with: ollama pull ${modelId}`);
+        return;
+      }
+      onError(`Ollama error: ${resp.status}`);
+      return;
+    }
+
+    const reader = resp.body?.getReader();
+    if (!reader) { onError("No response body"); return; }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let totalDuration = 0;
+    let evalCount = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.response) onDelta(parsed.response);
+          if (parsed.done) {
+            totalDuration = parsed.total_duration || 0;
+            evalCount = parsed.eval_count || 0;
+          }
+        } catch { /* partial */ }
+      }
+    }
+
+    onDone({ totalDuration, evalCount });
+  } catch (e) {
+    onError(e instanceof Error ? e.message : "Failed to connect to Ollama");
   }
 }
 

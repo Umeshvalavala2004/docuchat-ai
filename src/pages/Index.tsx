@@ -5,6 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useModelPreference } from "@/hooks/useModelPreference";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
@@ -31,6 +32,7 @@ const Index = () => {
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(user?.id);
   const { profile } = useProfile(user?.id);
   const isMobile = useIsMobile();
+  const { model: activeModel, updateModel } = useModelPreference(user?.id || null);
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -299,7 +301,7 @@ const Index = () => {
               </motion.div>
             ) : view === "settings" ? (
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
-                <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} />
+                <SettingsPage onBack={() => setView("upload")} userId={user.id} profile={profile} currentModel={activeModel} onModelChange={updateModel} />
               </motion.div>
             ) : view === "search" ? (
               <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
@@ -374,6 +376,7 @@ const Index = () => {
                         onCitationClick={handleCitationClick}
                         injectedPrompt={injectedPrompt}
                         onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
+                        modelConfig={activeModel}
                       />
                     </div>
                   )
@@ -404,6 +407,7 @@ const Index = () => {
                           onCitationClick={handleCitationClick}
                           injectedPrompt={injectedPrompt}
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
+                          modelConfig={activeModel}
                         />
                       </div>
                     </ResizablePanel>

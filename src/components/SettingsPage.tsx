@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, User, Palette, MessageSquare, FileText, Shield, Sun, Moon, Monitor, Camera, Save, Loader2 } from "lucide-react";
+import { ChevronLeft, User, Palette, MessageSquare, FileText, Shield, Sun, Moon, Monitor, Camera, Save, Loader2, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,16 +8,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { UserProfile } from "@/hooks/useProfile";
+import ModelSettings from "@/components/ModelSettings";
+import type { ModelConfig } from "@/hooks/useModelPreference";
 
 interface SettingsPageProps {
   onBack: () => void;
   userId: string;
   profile: UserProfile | null;
+  currentModel?: ModelConfig;
+  onModelChange?: (model: ModelConfig) => void;
 }
 
-type Tab = "general" | "chat" | "documents" | "account";
+type Tab = "general" | "ai-models" | "chat" | "documents" | "account";
 
-export default function SettingsPage({ onBack, userId, profile }: SettingsPageProps) {
+export default function SettingsPage({ onBack, userId, profile, currentModel, onModelChange }: SettingsPageProps) {
   const [tab, setTab] = useState<Tab>("general");
   const [name, setName] = useState(profile?.name || "");
   const [saving, setSaving] = useState(false);
@@ -69,6 +73,7 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
 
   const tabs: { id: Tab; label: string; icon: typeof User }[] = [
     { id: "general", label: "General", icon: Palette },
+    { id: "ai-models", label: "AI Models", icon: Cpu },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "documents", label: "Documents", icon: FileText },
     { id: "account", label: "Account", icon: User },
@@ -82,7 +87,6 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-6 py-4">
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={onBack}>
           <ChevronLeft className="h-4 w-4" />
@@ -94,7 +98,6 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Tabs sidebar */}
         <div className="w-48 border-r border-border p-3 space-y-1 hidden md:block">
           {tabs.map((t) => (
             <button
@@ -110,13 +113,12 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
           ))}
         </div>
 
-        {/* Mobile tab bar */}
-        <div className="flex md:hidden border-b border-border px-4 py-2 absolute top-[60px] left-0 right-0 bg-background z-10 gap-1">
+        <div className="flex md:hidden border-b border-border px-4 py-2 absolute top-[60px] left-0 right-0 bg-background z-10 gap-1 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${
+              className={`shrink-0 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${
                 tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
@@ -125,7 +127,6 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
           ))}
         </div>
 
-        {/* Content */}
         <ScrollArea className="flex-1">
           <div className="max-w-2xl mx-auto p-6 space-y-8">
             {tab === "general" && (
@@ -168,25 +169,20 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
               </motion.div>
             )}
 
+            {tab === "ai-models" && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <h3 className="text-sm font-semibold text-foreground mb-1">AI Model Settings</h3>
+                <p className="text-xs text-muted-foreground mb-4">Choose which AI model powers your document chat</p>
+                {currentModel && onModelChange ? (
+                  <ModelSettings currentModel={currentModel} onModelChange={onModelChange} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">Model settings unavailable.</p>
+                )}
+              </motion.div>
+            )}
+
             {tab === "chat" && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">AI Model</h3>
-                  <p className="text-xs text-muted-foreground mb-4">Select the AI model for chat responses</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["Default (Auto)", "Fast", "Balanced", "Precise"].map((m) => (
-                      <button
-                        key={m}
-                        className={`rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors ${
-                          m === "Default (Auto)" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <h3 className="text-sm font-semibold text-foreground mb-1">Response Style</h3>
                   <p className="text-xs text-muted-foreground mb-4">How the AI should respond</p>
@@ -212,24 +208,18 @@ export default function SettingsPage({ onBack, userId, profile }: SettingsPagePr
                   <h3 className="text-sm font-semibold text-foreground mb-1">Document Processing</h3>
                   <p className="text-xs text-muted-foreground mb-4">Configure how documents are processed</p>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-foreground">Show chunk previews in sources</span>
-                      <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer">
-                        <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm" />
+                    {[
+                      "Show chunk previews in sources",
+                      "Enable text highlighting",
+                      "Auto-scroll to citations",
+                    ].map((label) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-xs text-foreground">{label}</span>
+                        <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer">
+                          <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm" />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-foreground">Enable text highlighting</span>
-                      <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer">
-                        <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-foreground">Auto-scroll to citations</span>
-                      <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer">
-                        <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary-foreground shadow-sm" />
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </motion.div>

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List } from "lucide-react";
+import { Send, Loader2, FileText, Sparkles, Bot, User, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown, Download, ChevronDown, ChevronUp, List, Cloud, Monitor, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
-import { streamChat, type ChatMessage, type Source, type RetrievalMetrics, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
+import { streamChat, streamChatLocal, type ChatMessage, type Source, type RetrievalMetrics, saveMessage, createChatSession, getSuggestedQuestions, getKeyPoints, submitFeedback, exportChatAsText } from "@/lib/api";
 import { toast } from "sonner";
 import RagDebugPanel from "@/components/RagDebugPanel";
+import { Badge } from "@/components/ui/badge";
+import type { ModelConfig } from "@/hooks/useModelPreference";
 
 interface ChatInterfaceProps {
   documentId: string;
@@ -19,6 +21,7 @@ interface ChatInterfaceProps {
   onCitationClick?: (pageNumber: number | null, text?: string) => void;
   injectedPrompt?: string;
   onInjectedPromptConsumed?: () => void;
+  modelConfig?: ModelConfig;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -107,7 +110,7 @@ function ChatSkeleton() {
 
 export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
-  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed,
+  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
@@ -142,10 +145,16 @@ export default function ChatInterface({
     }
   }, [documentId, messages.length]);
 
+  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [tokenCount, setTokenCount] = useState<number | null>(null);
+
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
     setInput("");
     setIsLoading(true);
+    setResponseTime(null);
+    setTokenCount(null);
+    const startTime = performance.now();
     const userMsg: ChatMessage = { role: "user", content: userMessage.trim(), timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMsg]);
     let currentSessionId = sessionId;
@@ -160,30 +169,64 @@ export default function ChatInterface({
     if (currentSessionId) await saveMessage(currentSessionId, "user", userMessage);
     let assistantContent = "";
     let sources: Source[] = [];
-    await streamChat({
-      message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
-      onSources: (s) => { sources = s; setActiveSources(s); },
-      onMetrics: (m) => { setActiveMetrics(m); },
-      onDelta: (chunk) => {
-        assistantContent += chunk;
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-          return [...prev, { role: "assistant", content: assistantContent, sources, timestamp: new Date().toISOString() }];
-        });
-      },
-      onDone: async () => {
-        setIsLoading(false);
-        let assistantMsgId: string | null = null;
-        if (currentSessionId) assistantMsgId = await saveMessage(currentSessionId, "assistant", assistantContent, sources);
-        setMessages((prev) => prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m));
-      },
-      onError: (error) => {
-        setIsLoading(false);
-        toast.error(error);
-        setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
-      },
-    });
+
+    const isLocalModel = modelConfig?.model_type === "local";
+
+    if (isLocalModel && modelConfig) {
+      // Local Ollama model
+      await streamChatLocal({
+        message: userMessage,
+        modelId: modelConfig.model_id,
+        ollamaEndpoint: modelConfig.ollama_endpoint,
+        onDelta: (chunk) => {
+          assistantContent += chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+            return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date().toISOString() }];
+          });
+        },
+        onDone: async (metrics) => {
+          setIsLoading(false);
+          setResponseTime(Math.round(performance.now() - startTime));
+          if (metrics.evalCount) setTokenCount(metrics.evalCount);
+          if (currentSessionId) await saveMessage(currentSessionId, "assistant", assistantContent);
+        },
+        onError: (error) => {
+          setIsLoading(false);
+          toast.error(error);
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
+        },
+      });
+    } else {
+      // Cloud model via edge function
+      await streamChat({
+        message: userMessage, documentId, documentIds, chatSessionId: currentSessionId, history: messages,
+        modelId: modelConfig?.model_id,
+        onSources: (s) => { sources = s; setActiveSources(s); },
+        onMetrics: (m) => { setActiveMetrics(m); },
+        onDelta: (chunk) => {
+          assistantContent += chunk;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+            return [...prev, { role: "assistant", content: assistantContent, sources, timestamp: new Date().toISOString() }];
+          });
+        },
+        onDone: async () => {
+          setIsLoading(false);
+          setResponseTime(Math.round(performance.now() - startTime));
+          let assistantMsgId: string | null = null;
+          if (currentSessionId) assistantMsgId = await saveMessage(currentSessionId, "assistant", assistantContent, sources);
+          setMessages((prev) => prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m));
+        },
+        onError: (error) => {
+          setIsLoading(false);
+          toast.error(error);
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${error}`, timestamp: new Date().toISOString() }]);
+        },
+      });
+    }
   };
 
   const handleRegenerate = async (messageIndex: number) => {
@@ -199,6 +242,23 @@ export default function ChatInterface({
 
   return (
     <div className="flex h-full flex-col bg-background/50">
+      {/* Model indicator + Performance bar */}
+      <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border/50 bg-card/50">
+        <Badge variant="outline" className={`text-[10px] gap-1 ${modelConfig?.model_type === "local" ? "border-success/30 text-success" : "border-primary/30 text-primary"}`}>
+          {modelConfig?.model_type === "local" ? <Monitor className="h-3 w-3" /> : <Cloud className="h-3 w-3" />}
+          {modelConfig?.model_name || "Gemini 3 Flash"} ({modelConfig?.model_type === "local" ? "Local" : "Cloud"})
+        </Badge>
+        {responseTime !== null && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Timer className="h-3 w-3" />{(responseTime / 1000).toFixed(1)}s
+          </span>
+        )}
+        {tokenCount !== null && (
+          <span className="text-[10px] text-muted-foreground">
+            {tokenCount} tokens
+          </span>
+        )}
+      </div>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {messages.length === 0 && (
