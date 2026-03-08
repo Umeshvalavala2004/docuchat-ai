@@ -388,7 +388,7 @@ export default function ChatInterface({
                     {msg.role === "assistant" && (
                       <>
                         <CopyButton text={msg.content} />
-                        <FeedbackButtons messageId={msg.id} userId={userId} feedback={msg.feedback} />
+                        <FeedbackButtons messageId={msg.id} userId={userId} initialFeedback={msg.feedback} />
                         {!isLoading && (
                           <button
                             onClick={() => handleRegenerate(i)}
