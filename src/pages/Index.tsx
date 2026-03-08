@@ -14,6 +14,8 @@ import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
 import DocumentUpload from "@/components/DocumentUpload";
 import HomeHero from "@/components/HomeHero";
+import type { ToolTab } from "@/components/HomeHero";
+import ToolResults from "@/components/ToolResults";
 import PdfViewer from "@/components/PdfViewer";
 import AdminDashboard from "@/components/AdminDashboard";
 import SettingsPage from "@/components/SettingsPage";
@@ -30,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import type { Source, ChatMessage } from "@/lib/api";
 import type { TextAction } from "@/components/TextSelectionToolbar";
 
-type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools";
+type View = "upload" | "chat" | "admin" | "settings" | "search" | "tools" | "tool_results";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -54,6 +56,18 @@ const Index = () => {
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
   const [mobilePanel, setMobilePanel] = useState<"pdf" | "chat">("chat");
+  const [activeToolType, setActiveToolType] = useState<ToolTab>("chat");
+  const [toolText, setToolText] = useState<string | undefined>();
+  const [toolDocId, setToolDocId] = useState<string | undefined>();
+  const [toolDocName, setToolDocName] = useState<string | undefined>();
+
+  const handleToolProcess = (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => {
+    setActiveToolType(toolType);
+    setToolDocId(documentId);
+    setToolText(text);
+    setToolDocName(documentName);
+    setView("tool_results");
+  };
 
   const handleTextAction = useCallback((action: TextAction, text: string, pageNumber: number) => {
     const prompts: Record<TextAction, string> = {
@@ -340,11 +354,21 @@ const Index = () => {
               <motion.div key="tools" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <ToolsDashboard userId={user.id} onBack={() => setView("upload")} />
               </motion.div>
+            ) : view === "tool_results" ? (
+              <ToolResults
+                key={`tool-${activeToolType}-${toolDocId || toolText?.slice(0,20)}`}
+                toolType={activeToolType as any}
+                documentId={toolDocId}
+                text={toolText}
+                documentName={toolDocName}
+                onBack={() => setView("upload")}
+              />
             ) : view === "upload" || !selectedDocId ? (
               <HomeHero
                 key="upload"
                 userId={user.id}
                 onDocumentUploaded={handleDocumentUploaded}
+                onToolProcess={handleToolProcess}
                 brandingAppName={branding.appName}
               />
             ) : showSplitView ? (
