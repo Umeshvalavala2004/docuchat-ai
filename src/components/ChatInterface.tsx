@@ -528,14 +528,24 @@ export default function ChatInterface({
                     transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
                     className="mt-1 shrink-0"
                   >
-                    <Avatar className="h-9 w-9 rounded-xl border border-border shadow-sm">
-                      {profile?.profile_picture ? (
-                        <AvatarImage src={profile.profile_picture} alt="You" className="rounded-xl object-cover" />
-                      ) : null}
-                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-xs font-bold">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Avatar className="h-9 w-9 rounded-xl border border-border shadow-sm cursor-pointer">
+                            {profile?.profile_picture ? (
+                              <AvatarImage src={profile.profile_picture} alt="You" className="rounded-xl object-cover" />
+                            ) : null}
+                            <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-xs font-bold">
+                              {userInitials}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="flex flex-col gap-0.5 text-xs">
+                          {profile?.name && <span className="font-semibold">{profile.name}</span>}
+                          <span className="text-muted-foreground">{profile?.email || "You"}</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </motion.div>
                 )}
               </motion.div>
