@@ -36,6 +36,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const { model: activeModel, updateModel } = useModelPreference(user?.id || null);
   const { usage } = useDailyUsage(user?.id || null);
+  const { branding, copyright } = useBranding();
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
