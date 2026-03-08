@@ -354,11 +354,21 @@ const Index = () => {
               <motion.div key="tools" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1">
                 <ToolsDashboard userId={user.id} onBack={() => setView("upload")} />
               </motion.div>
+            ) : view === "tool_results" ? (
+              <ToolResults
+                key={`tool-${activeToolType}-${toolDocId || toolText?.slice(0,20)}`}
+                toolType={activeToolType as any}
+                documentId={toolDocId}
+                text={toolText}
+                documentName={toolDocName}
+                onBack={() => setView("upload")}
+              />
             ) : view === "upload" || !selectedDocId ? (
               <HomeHero
                 key="upload"
                 userId={user.id}
                 onDocumentUploaded={handleDocumentUploaded}
+                onToolProcess={handleToolProcess}
                 brandingAppName={branding.appName}
               />
             ) : showSplitView ? (
