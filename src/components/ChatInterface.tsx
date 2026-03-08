@@ -176,11 +176,11 @@ export default function ChatInterface({
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
-    if (injectedPrompt && !isLoading) {
+    if (injectedPrompt && !isLoading && docStatus === "ready") {
       sendMessage(injectedPrompt);
       onInjectedPromptConsumed?.();
     }
-  }, [injectedPrompt]);
+  }, [injectedPrompt, isLoading, docStatus, onInjectedPromptConsumed]);
 
   useEffect(() => {
     if (messages.length === 0 && documentId && docStatus === "ready") {
@@ -198,6 +198,10 @@ export default function ChatInterface({
 
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return;
+    if (docStatus !== "ready") {
+      toast.error("Document is still being processed. Please wait until indexing completes.");
+      return;
+    }
 
     // Parse #mentions from input
     const { cleanedInput, mentionedDocIds: parsedDocIds } = parseMentions(userMessage, allDocuments);
