@@ -224,8 +224,6 @@ const Index = () => {
     }
   };
 
-  const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
-  const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
