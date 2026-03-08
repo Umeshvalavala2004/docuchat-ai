@@ -437,8 +437,8 @@ export default function ChatInterface({
                 <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl gradient-primary p-6 mb-6 shadow-glow">
                   <Sparkles className="h-12 w-12 text-primary-foreground" />
                 </motion.div>
-                <h3 className="text-2xl font-bold text-foreground tracking-tight">Chat with {documentName}</h3>
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">Ask any question about your document. I'll find the answer and cite the exact source.</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{documentName.length > 30 ? documentName.slice(0, 30) + "…" : `Chat with ${documentName}`}</h3>
+                <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted-foreground leading-relaxed">Ask any question about your document. I'll find the answer and cite the exact source.</p>
 
                 {keyPoints.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 w-full max-w-md">
