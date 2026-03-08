@@ -100,6 +100,9 @@ export default function Sidebar({
   onSignOut,
   collapsed,
   onToggle,
+  userRole = "free_user",
+  onUpgradeClick,
+  onAdminClick,
 }: SidebarProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
