@@ -32,6 +32,7 @@ interface SidebarProps {
   onUpgradeClick?: () => void;
   onAdminClick?: () => void;
   onSettingsClick?: () => void;
+  onSearchClick?: () => void;
   profileName?: string | null;
   profilePicture?: string | null;
 }
