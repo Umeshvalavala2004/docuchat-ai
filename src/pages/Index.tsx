@@ -63,6 +63,7 @@ const Index = () => {
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [injectedPrompt, setInjectedPrompt] = useState<string | undefined>();
   const [mobilePanel, setMobilePanel] = useState<"pdf" | "chat">("chat");
+  const [pdfPanelOpen, setPdfPanelOpen] = useState(true);
   const [activeToolType, setActiveToolType] = useState<ToolTab>("chat");
   const [toolText, setToolText] = useState<string | undefined>();
   const [toolDocId, setToolDocId] = useState<string | undefined>();
