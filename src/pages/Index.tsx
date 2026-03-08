@@ -53,7 +53,18 @@ const Index = () => {
 
   const handleSelectDocument = (docId: string, docName: string) => {
     setSelectedDocId(docId);
+    setSelectedDocIds([]);
     setSelectedDocName(docName);
+    setView("chat");
+    setChatSessionId(undefined);
+    setInitialMessages(undefined);
+    setShowPdfViewer(false);
+  };
+
+  const handleStartMultiDocChat = (docIds: string[], docNames: string[]) => {
+    setSelectedDocId(docIds[0]);
+    setSelectedDocIds(docIds);
+    setSelectedDocName(docNames.join(", "));
     setView("chat");
     setChatSessionId(undefined);
     setInitialMessages(undefined);
