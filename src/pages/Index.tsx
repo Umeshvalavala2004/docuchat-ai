@@ -9,6 +9,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useModelPreference } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { useBranding } from "@/hooks/useBranding";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
