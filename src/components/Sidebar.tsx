@@ -36,6 +36,9 @@ interface SidebarProps {
   profileName?: string | null;
   profilePicture?: string | null;
   usageInfo?: { questionsAsked: number; maxQuestions: number; isPremium: boolean; remaining: number };
+  brandingAppName?: string;
+  brandingSubtitle?: string;
+  brandingLogoUrl?: string | null;
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; progress: number }> = {
