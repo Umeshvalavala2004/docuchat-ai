@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
@@ -210,6 +210,19 @@ const Index = () => {
   const isPdf = selectedDocName?.toLowerCase().endsWith(".pdf");
   const showSplitView = view === "chat" && selectedDocId && isPdf && selectedDocIds.length <= 1;
 
+  // Keyboard shortcut: Ctrl+Shift+P to toggle PDF panel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+        e.preventDefault();
+        if (showSplitView && !isMobile) {
+          setPdfPanelOpen(prev => !prev);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSplitView, isMobile]);
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
@@ -372,7 +385,10 @@ const Index = () => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  {pdfPanelOpen ? "Hide PDF viewer" : "Show PDF viewer"}
+                  <span>{pdfPanelOpen ? "Hide PDF viewer" : "Show PDF viewer"}</span>
+                  <kbd className="ml-2 inline-flex items-center gap-0.5 rounded border border-border/50 bg-muted px-1 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    Ctrl+Shift+P
+                  </kbd>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
