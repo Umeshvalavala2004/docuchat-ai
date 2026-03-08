@@ -316,7 +316,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           >
             <t.icon className="h-3.5 w-3.5" />
             {t.label}
-            {t.badge && t.badge > 0 && (
+            {t.badge != null && t.badge > 0 && (
               <span className="ml-1 h-4 min-w-[16px] rounded-full bg-destructive text-[9px] text-destructive-foreground flex items-center justify-center px-1 font-bold">
                 {t.badge}
               </span>
