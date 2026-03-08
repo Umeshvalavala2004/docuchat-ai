@@ -21,6 +21,7 @@ interface ChatInterfaceProps {
   onCitationClick?: (pageNumber: number | null, text?: string) => void;
   injectedPrompt?: string;
   onInjectedPromptConsumed?: () => void;
+  modelConfig?: ModelConfig;
 }
 
 function CopyButton({ text }: { text: string }) {
