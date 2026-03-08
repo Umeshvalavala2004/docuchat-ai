@@ -16,7 +16,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { uploadDocument } from "@/lib/api";
+import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
 
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
