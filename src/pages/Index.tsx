@@ -115,9 +115,10 @@ const Index = () => {
                 {/* Chat header */}
                 <div className="flex items-center gap-2 border-b border-border px-4 py-3">
                   <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground truncate">
+                  <span className="text-sm font-medium text-foreground truncate flex-1">
                     {selectedDocName}
                   </span>
+                  <DarkModeToggle />
                 </div>
                 <ChatInterface
                   documentId={selectedDocId}
