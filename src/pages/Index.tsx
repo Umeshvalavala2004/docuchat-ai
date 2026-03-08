@@ -227,6 +227,7 @@ const Index = () => {
           brandingAppName={branding.appName}
           brandingSubtitle={branding.subtitle}
           brandingLogoUrl={branding.logoUrl}
+          activeWorkspaceId={activeWorkspaceId}
         />
       )}
 
