@@ -8,6 +8,7 @@ import DocumentUpload from "@/components/DocumentUpload";
 import SourcesPanel from "@/components/SourcesPanel";
 import { FileText, Upload } from "lucide-react";
 import type { Source } from "@/lib/api";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 type View = "upload" | "chat";
 
