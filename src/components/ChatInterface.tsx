@@ -686,7 +686,7 @@ export default function ChatInterface({
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted-foreground/50">Type # to mention a document for targeted answers</p>
+          <p className="mt-1.5 sm:mt-2 text-center text-[10px] text-muted-foreground/50 hidden sm:block">Type # to mention a document for targeted answers</p>
         </div>
       </div>
     </div>
