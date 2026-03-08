@@ -36,14 +36,28 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
         "Show chunk previews in sources": true,
         "Enable text highlighting": true,
         "Auto-scroll to citations": true,
+        "Enable OCR for scanned PDFs": true,
+        "Show page numbers in chunks": true,
       };
     } catch {
       return {
         "Show chunk previews in sources": true,
         "Enable text highlighting": true,
         "Auto-scroll to citations": true,
+        "Enable OCR for scanned PDFs": true,
+        "Show page numbers in chunks": true,
       };
     }
+  });
+
+  const [chunkSize, setChunkSize] = useState<number>(() => {
+    return parseInt(localStorage.getItem("chunkSize") || "500", 10);
+  });
+  const [chunkOverlap, setChunkOverlap] = useState<number>(() => {
+    return parseInt(localStorage.getItem("chunkOverlap") || "100", 10);
+  });
+  const [ocrLanguage, setOcrLanguage] = useState<string>(() => {
+    return localStorage.getItem("ocrLanguage") || "auto";
   });
 
   const toggleDocSetting = (key: string) => {
@@ -53,6 +67,22 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
       toast.success(`${key} ${updated[key] ? "enabled" : "disabled"}`);
       return updated;
     });
+  };
+
+  const handleChunkSizeChange = (value: number[]) => {
+    setChunkSize(value[0]);
+    localStorage.setItem("chunkSize", value[0].toString());
+  };
+
+  const handleChunkOverlapChange = (value: number[]) => {
+    setChunkOverlap(value[0]);
+    localStorage.setItem("chunkOverlap", value[0].toString());
+  };
+
+  const handleOcrLanguageChange = (value: string) => {
+    setOcrLanguage(value);
+    localStorage.setItem("ocrLanguage", value);
+    toast.success(`OCR language set to ${value === "auto" ? "Auto-detect" : value.toUpperCase()}`);
   };
 
   const handleResponseStyleChange = (style: string) => {
