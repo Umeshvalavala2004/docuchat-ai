@@ -8,6 +8,7 @@ import DocumentUpload from "@/components/DocumentUpload";
 import SourcesPanel from "@/components/SourcesPanel";
 import { FileText, Upload } from "lucide-react";
 import type { Source } from "@/lib/api";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 type View = "upload" | "chat";
 
@@ -85,8 +86,11 @@ const Index = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-1 flex-col items-center justify-center p-8"
               >
-                <div className="w-full max-w-lg">
-                  <div className="mb-8 text-center">
+                <div className="w-full max-w-lg relative">
+                <div className="absolute top-4 right-4">
+                  <DarkModeToggle />
+                </div>
+                <div className="mb-8 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                       <Upload className="h-8 w-8 text-primary" />
                     </div>
@@ -114,9 +118,10 @@ const Index = () => {
                 {/* Chat header */}
                 <div className="flex items-center gap-2 border-b border-border px-4 py-3">
                   <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground truncate">
+                  <span className="text-sm font-medium text-foreground truncate flex-1">
                     {selectedDocName}
                   </span>
+                  <DarkModeToggle />
                 </div>
                 <ChatInterface
                   documentId={selectedDocId}
