@@ -521,6 +521,7 @@ const Index = () => {
                   onChatSessionCreated={(id) => setChatSessionId(id)}
                   onCitationClick={handleCitationClick}
                   workspaceId={activeWorkspaceId}
+                  onDocumentDeleted={handleDocumentDeletedFromChat}
                 />
               </motion.div>
             )}
