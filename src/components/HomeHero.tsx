@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { uploadDocument, checkDuplicateDocument } from "@/lib/api";
 import { toast } from "sonner";
-import testimonialBadge from "@/assets/testimonial-badge.png";
+
 
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
 
