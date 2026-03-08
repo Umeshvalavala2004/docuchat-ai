@@ -4,9 +4,8 @@ import {
   FileText, MessageSquare, Plus, Trash2, ChevronLeft, ChevronRight,
   Loader2, Clock, CheckCircle2, AlertCircle, Pencil, Check, X,
   Search, Database, Layers, FolderPlus, Folder, FolderOpen,
-  ChevronDown, PenLine, Shield, Youtube, FlaskConical, Globe,
-  GitCompare, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
-  Link2, Zap,
+  ChevronDown, Sparkles, Crown, FileType, FileType2, Settings, LogOut,
+  Link2, Zap, GitCompare, Braces, PenLine, Code2, Regex, Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
