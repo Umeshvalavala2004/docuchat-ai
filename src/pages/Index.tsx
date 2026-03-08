@@ -198,6 +198,7 @@ const Index = () => {
                   highlightPage={highlightPage}
                   highlightText={highlightText}
                   inline={true}
+                  onTextAction={handleTextAction}
                 />
               </div>
 
