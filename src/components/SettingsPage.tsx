@@ -24,6 +24,7 @@ type Tab = "general" | "ai-models" | "chat" | "documents" | "account" | "about";
 
 export default function SettingsPage({ onBack, userId, profile, currentModel, onModelChange }: SettingsPageProps) {
   const [tab, setTab] = useState<Tab>("general");
+  const { branding, copyright } = useBranding();
   const [name, setName] = useState(profile?.name || "");
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
