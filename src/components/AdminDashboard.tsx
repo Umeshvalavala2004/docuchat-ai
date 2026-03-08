@@ -62,6 +62,34 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "" });
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const filePath = `logo-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("logos").upload(filePath, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("logos").getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+      setBrandForm((prev) => ({ ...prev, logoUrl: publicUrl }));
+      toast.success("Logo uploaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    }
+    setLogoUploading(false);
+  };
 
   const [stats, setStats] = useState({
     totalUsers: 0, freeUsers: 0, proUsers: 0, adminUsers: 0,
@@ -634,14 +662,33 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium">Logo Image URL</Label>
-                      <Input
-                        value={brandForm.logoUrl}
-                        onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })}
-                        placeholder="https://example.com/logo.png"
-                        className="h-10 rounded-xl"
-                      />
-                      <p className="text-[10px] text-muted-foreground">Leave empty to use the default icon</p>
+                      <Label className="text-xs font-medium">Logo Image</Label>
+                      <div className="flex items-center gap-3">
+                        {brandForm.logoUrl ? (
+                          <img src={brandForm.logoUrl} className="h-12 w-12 rounded-xl object-cover border border-border" alt="Current logo" />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
+                            <Image className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+                            {logoUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Image className="h-3 w-3" />}
+                            {logoUploading ? "Uploading..." : "Upload Logo"}
+                            <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={logoUploading} />
+                          </label>
+                          {brandForm.logoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setBrandForm({ ...brandForm, logoUrl: "" })}
+                              className="text-[10px] text-destructive hover:underline text-left"
+                            >
+                              Remove logo
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Upload a square image (max 2MB). Leave empty for default icon.</p>
                     </div>
                   </div>
                 </div>
