@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
 import QuickQuestions from "@/components/QuickQuestions";
+import ShareDialog from "@/components/ShareDialog";
+import { useDocumentShares, useSharedWithMe } from "@/hooks/useSharing";
 import type { User } from "@supabase/supabase-js";
 
 interface SidebarProps {
