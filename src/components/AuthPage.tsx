@@ -132,10 +132,10 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-foreground">
-              {isSignUp ? "Create your account" : "Welcome back"}
+              {isForgot ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {isSignUp ? "Start chatting with your documents" : "Sign in to continue"}
+              {isForgot ? "We'll send you a reset link" : isSignUp ? "Start chatting with your documents" : "Sign in to continue"}
             </p>
           </div>
 
