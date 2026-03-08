@@ -307,7 +307,7 @@ export default function SettingsPage({ onBack, userId, profile, currentModel, on
                   <h3 className="text-sm font-semibold text-foreground mb-3">Platform Details</h3>
                   <div className="space-y-2">
                     {[
-                      { label: "Project Name", value: "Interface_IQ" },
+                      { label: "Project Name", value: branding.appName },
                       { label: "Version", value: "1.0.0" },
                       { label: "Platform", value: "AI Document Intelligence" },
                     ].map((item) => (
