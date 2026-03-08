@@ -335,8 +335,13 @@ export default function Sidebar({
         </div>
       </div>
 
+      {/* Workspace Switcher */}
+      <div className="px-3 pt-2">
+        <WorkspaceSwitcherInSidebar userId={user.id} activeWorkspaceId={activeWorkspaceId} />
+      </div>
+
       {/* New Chat Button */}
-      <div className="px-3 pt-3 pb-2">
+      <div className="px-3 pt-2 pb-2">
         <Button
           onClick={onNewUpload}
           className="w-full justify-center gap-2 rounded-xl h-10 text-sm font-medium gradient-primary hover:opacity-90 shadow-sm border-0"
