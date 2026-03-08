@@ -541,7 +541,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Documents</th>
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Joined</th>
                         <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Last Login</th>
-                      </tr>
+                        <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Actions</th>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {users.map((u) => (
