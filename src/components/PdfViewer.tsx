@@ -32,6 +32,7 @@ export default function PdfViewer({
   highlightPage,
   highlightText,
   inline = false,
+  onTextAction,
 }: PdfViewerProps) {
   const [expanded, setExpanded] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
