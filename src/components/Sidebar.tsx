@@ -22,6 +22,8 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import ImportantLinks from "@/components/ImportantLinks";
 import QuickQuestions from "@/components/QuickQuestions";
 import ShareDialog from "@/components/ShareDialog";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
+import type { Workspace } from "@/hooks/useWorkspaces";
 import { useDocumentShares, useSharedWithMe } from "@/hooks/useSharing";
 import type { User } from "@supabase/supabase-js";
 
@@ -48,6 +50,13 @@ interface SidebarProps {
   brandingAppName?: string;
   brandingSubtitle?: string;
   brandingLogoUrl?: string | null;
+  activeWorkspaceId?: string | null;
+  workspaces?: Workspace[];
+  activeWorkspace?: Workspace | null;
+  onSwitchWorkspace?: (id: string) => void;
+  onCreateWorkspace?: (name: string) => Promise<Workspace | null>;
+  onRenameWorkspace?: (id: string, name: string) => Promise<void>;
+  onDeleteWorkspace?: (id: string) => Promise<void>;
 }
 
 const sidebarTools = [
@@ -97,6 +106,13 @@ export default function Sidebar({
   brandingAppName = "Interface_IQ",
   brandingSubtitle = "Powered by Interface_IQ",
   brandingLogoUrl,
+  activeWorkspaceId,
+  workspaces = [],
+  activeWorkspace = null,
+  onSwitchWorkspace,
+  onCreateWorkspace,
+  onRenameWorkspace,
+  onDeleteWorkspace,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<any[]>([]);
@@ -122,7 +138,7 @@ export default function Sidebar({
 
   const loadDocuments = async () => {
     try {
-      const docs = await getUserDocuments(user.id);
+      const docs = await getUserDocuments(user.id, activeWorkspaceId || undefined);
       setDocuments(docs);
     } catch (e) {
       console.error("Failed to load documents:", e);
@@ -133,7 +149,7 @@ export default function Sidebar({
 
   const loadHistory = async () => {
     try {
-      const sessions = await getChatSessions(user.id);
+      const sessions = await getChatSessions(user.id, activeWorkspaceId || undefined);
       setChatSessions(sessions);
     } catch (e) {
       console.error("Failed to load history:", e);
@@ -148,7 +164,7 @@ export default function Sidebar({
       loadHistory();
     }, 5000);
     return () => clearInterval(interval);
-  }, [user.id]);
+  }, [user.id, activeWorkspaceId]);
 
   const handleDelete = async (docId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -331,8 +347,22 @@ export default function Sidebar({
         </div>
       </div>
 
+      {/* Workspace Switcher */}
+      {onSwitchWorkspace && onCreateWorkspace && onRenameWorkspace && onDeleteWorkspace && (
+        <div className="px-3 pt-2">
+          <WorkspaceSwitcher
+            workspaces={workspaces}
+            activeWorkspace={activeWorkspace}
+            onSwitch={onSwitchWorkspace}
+            onCreate={onCreateWorkspace}
+            onRename={onRenameWorkspace}
+            onDelete={onDeleteWorkspace}
+          />
+        </div>
+      )}
+
       {/* New Chat Button */}
-      <div className="px-3 pt-3 pb-2">
+      <div className="px-3 pt-2 pb-2">
         <Button
           onClick={onNewUpload}
           className="w-full justify-center gap-2 rounded-xl h-10 text-sm font-medium gradient-primary hover:opacity-90 shadow-sm border-0"

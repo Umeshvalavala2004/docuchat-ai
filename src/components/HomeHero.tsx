@@ -36,9 +36,10 @@ interface HomeHeroProps {
   onDocumentUploaded: (doc: any) => void;
   onToolProcess: (toolType: ToolTab, documentId?: string, text?: string, documentName?: string) => void;
   brandingAppName?: string;
+  workspaceId?: string | null;
 }
 
-export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, brandingAppName }: HomeHeroProps) {
+export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, brandingAppName, workspaceId }: HomeHeroProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ToolTab>("chat");
   const [isDragging, setIsDragging] = useState(false);
@@ -64,7 +65,7 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
     }
     setUploading(true);
     try {
-      const doc = await uploadDocument(file, userId);
+      const doc = await uploadDocument(file, userId, workspaceId || undefined);
       setUploadedFile(file.name);
 
       if (activeTab === "chat") {

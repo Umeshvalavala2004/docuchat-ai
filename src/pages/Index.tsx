@@ -9,6 +9,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useModelPreference } from "@/hooks/useModelPreference";
 import { useDailyUsage } from "@/hooks/useDailyUsage";
 import { useBranding } from "@/hooks/useBranding";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import AuthPage from "@/components/AuthPage";
 import Sidebar from "@/components/Sidebar";
 import ChatInterface from "@/components/ChatInterface";
@@ -45,6 +47,10 @@ const Index = () => {
   const { model: activeModel, updateModel } = useModelPreference(user?.id || null);
   const { usage } = useDailyUsage(user?.id || null);
   const { branding, copyright } = useBranding();
+  const {
+    workspaces, activeWorkspace, activeWorkspaceId,
+    switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace,
+  } = useWorkspaces(user?.id || null);
 
   const [view, setView] = useState<View>("upload");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -221,6 +227,13 @@ const Index = () => {
           brandingAppName={branding.appName}
           brandingSubtitle={branding.subtitle}
           brandingLogoUrl={branding.logoUrl}
+          activeWorkspaceId={activeWorkspaceId}
+          workspaces={workspaces}
+          activeWorkspace={activeWorkspace}
+          onSwitchWorkspace={switchWorkspace}
+          onCreateWorkspace={createWorkspace}
+          onRenameWorkspace={renameWorkspace}
+          onDeleteWorkspace={deleteWorkspace}
         />
       )}
 
@@ -327,6 +340,18 @@ const Index = () => {
             </div>
           )}
 
+          {!sidebarCollapsed ? null : (
+            <WorkspaceSwitcher
+              workspaces={workspaces}
+              activeWorkspace={activeWorkspace}
+              onSwitch={switchWorkspace}
+              onCreate={createWorkspace}
+              onRename={renameWorkspace}
+              onDelete={deleteWorkspace}
+              collapsed
+            />
+          )}
+
           <LanguageSwitcher />
 
           <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-lg ${view === "dashboard" ? "bg-primary/10 text-primary" : ""}`} onClick={() => setView("dashboard")} title="Dashboard">
@@ -387,6 +412,7 @@ const Index = () => {
                 onDocumentUploaded={handleDocumentUploaded}
                 onToolProcess={handleToolProcess}
                 brandingAppName={branding.appName}
+                workspaceId={activeWorkspaceId}
               />
             ) : showSplitView ? (
               <motion.div
@@ -422,6 +448,7 @@ const Index = () => {
                         injectedPrompt={injectedPrompt}
                         onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                         modelConfig={activeModel}
+                        workspaceId={activeWorkspaceId}
                       />
                     </div>
                   )
@@ -452,6 +479,7 @@ const Index = () => {
                           injectedPrompt={injectedPrompt}
                           onInjectedPromptConsumed={() => setInjectedPrompt(undefined)}
                           modelConfig={activeModel}
+                          workspaceId={activeWorkspaceId}
                         />
                       </div>
                     </ResizablePanel>
@@ -476,6 +504,7 @@ const Index = () => {
                   initialMessages={initialMessages}
                   onChatSessionCreated={(id) => setChatSessionId(id)}
                   onCitationClick={handleCitationClick}
+                  workspaceId={activeWorkspaceId}
                 />
               </motion.div>
             )}

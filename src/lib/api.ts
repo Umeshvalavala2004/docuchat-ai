@@ -224,7 +224,7 @@ export async function streamChatLocal({
   }
 }
 
-export async function uploadDocument(file: File, userId: string) {
+export async function uploadDocument(file: File, userId: string, workspaceId?: string) {
   const filePath = `${userId}/${crypto.randomUUID()}-${file.name}`;
 
   const { error: uploadError } = await supabase.storage
@@ -232,16 +232,19 @@ export async function uploadDocument(file: File, userId: string) {
     .upload(filePath, file);
   if (uploadError) throw uploadError;
 
+  const insertData: any = {
+    user_id: userId,
+    name: file.name,
+    file_path: filePath,
+    file_size: file.size,
+    file_type: file.type || file.name.split(".").pop() || "unknown",
+    status: "pending",
+  };
+  if (workspaceId) insertData.workspace_id = workspaceId;
+
   const { data: doc, error: docError } = await supabase
     .from("documents")
-    .insert({
-      user_id: userId,
-      name: file.name,
-      file_path: filePath,
-      file_size: file.size,
-      file_type: file.type || file.name.split(".").pop() || "unknown",
-      status: "pending",
-    })
+    .insert(insertData)
     .select()
     .single();
   if (docError) throw docError;
@@ -256,12 +259,14 @@ export async function uploadDocument(file: File, userId: string) {
   return doc;
 }
 
-export async function getUserDocuments(userId: string) {
-  const { data, error } = await supabase
+export async function getUserDocuments(userId: string, workspaceId?: string) {
+  let query = supabase
     .from("documents")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -274,26 +279,30 @@ export async function renameDocument(documentId: string, newName: string) {
   if (error) throw error;
 }
 
-export async function createChatSession(userId: string, documentId: string, title?: string) {
+export async function createChatSession(userId: string, documentId: string, title?: string, workspaceId?: string) {
+  const insertData: any = {
+    user_id: userId,
+    document_id: documentId,
+    title: title || "New Chat",
+  };
+  if (workspaceId) insertData.workspace_id = workspaceId;
   const { data, error } = await supabase
     .from("chat_sessions")
-    .insert({
-      user_id: userId,
-      document_id: documentId,
-      title: title || "New Chat",
-    })
+    .insert(insertData)
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function getChatSessions(userId: string) {
-  const { data, error } = await supabase
+export async function getChatSessions(userId: string, workspaceId?: string) {
+  let query = supabase
     .from("chat_sessions")
     .select("*, documents(name)")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+  if (workspaceId) query = query.eq("workspace_id", workspaceId);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }

@@ -28,6 +28,7 @@ interface ChatInterfaceProps {
   injectedPrompt?: string;
   onInjectedPromptConsumed?: () => void;
   modelConfig?: ModelConfig;
+  workspaceId?: string | null;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -116,7 +117,7 @@ function ChatSkeleton() {
 
 export default function ChatInterface({
   documentId, documentIds, documentName, userId, chatSessionId,
-  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig,
+  initialMessages, onChatSessionCreated, onCitationClick, injectedPrompt, onInjectedPromptConsumed, modelConfig, workspaceId,
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
@@ -212,7 +213,7 @@ export default function ChatInterface({
     let currentSessionId = sessionId;
     if (!currentSessionId) {
       try {
-        const session = await createChatSession(userId, documentId, userMessage.slice(0, 50));
+        const session = await createChatSession(userId, documentId, userMessage.slice(0, 50), workspaceId || undefined);
         currentSessionId = session.id;
         setSessionId(session.id);
         onChatSessionCreated?.(session.id);
