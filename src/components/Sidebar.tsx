@@ -98,6 +98,7 @@ export default function Sidebar({
   brandingAppName = "Interface_IQ",
   brandingSubtitle = "Powered by Interface_IQ",
   brandingLogoUrl,
+  activeWorkspaceId,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<any[]>([]);
