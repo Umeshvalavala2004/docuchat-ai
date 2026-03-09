@@ -479,9 +479,12 @@ export default function PdfViewer({
                       ref={(el) => {
                         if (el) pageRefs.current.set(pg, el);
                       }}
-                      className={`shadow-sm rounded-sm overflow-hidden transition-all relative ${
-                        highlightPage === pg ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                      className={`shadow-sm rounded-sm overflow-hidden transition-all duration-500 relative ${
+                        highlightPage === pg
+                          ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)]"
+                          : ""
                       }`}
+                    >
                     >
                       <Page
                         pageNumber={pg}
