@@ -4,7 +4,7 @@ import {
   Shield, Check, X, Clock, User, ChevronLeft,
   Loader2, CheckCircle2, XCircle, AlertCircle,
   Users, FileText, MessageSquare, Crown, Ban,
-  ArrowUpCircle, ArrowDownCircle, BarChart3, Eye,
+  ArrowUpCircle, ArrowDownCircle, BarChart3, Eye, RotateCcw,
   TrendingUp, Activity, Search as SearchIcon, Tag,
   Palette, Save, Image, Trash2,
 } from "lucide-react";
