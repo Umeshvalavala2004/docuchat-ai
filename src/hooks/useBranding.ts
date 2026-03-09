@@ -145,7 +145,16 @@ export function useBranding() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  // Load branding and observe theme changes to re-apply accent color
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!branding.accentColor) return;
+    const observer = observeThemeChanges(branding.accentColor);
+    return () => observer.disconnect();
+  }, [branding.accentColor]);
 
   const updateBranding = async (config: Partial<BrandingConfig>) => {
     const updated = { ...branding, ...config };
