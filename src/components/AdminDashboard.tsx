@@ -287,6 +287,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightYear: brandForm.copyrightYear,
         copyrightText: brandForm.copyrightText,
         logoUrl: brandForm.logoUrl || null,
+        accentColor: brandForm.accentColor,
       });
       toast.success("Branding updated! Changes will appear across the app.");
     } catch (e: any) {
