@@ -941,6 +941,28 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </div>
 
                     <div className="space-y-2">
+                      <Label className="text-xs font-medium">Font Family</Label>
+                      <Select value={brandForm.fontFamily} onValueChange={(v) => setBrandForm({ ...brandForm, fontFamily: v })}>
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue placeholder="Choose a font" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Modern", "Classic", "Serif", "Technical"].map((cat) => (
+                            <SelectGroup key={cat}>
+                              <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">{cat}</SelectLabel>
+                              {FONT_OPTIONS.filter((f) => f.category === cat).map((f) => (
+                                <SelectItem key={f.value} value={f.value}>
+                                  <span style={{ fontFamily: `'${f.value}', sans-serif` }}>{f.label}</span>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">Select a Google Font to apply across the entire app.</p>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label className="text-xs font-medium">Logo Image</Label>
                       <div className="flex items-center gap-3">
                         {brandForm.logoUrl ? (
