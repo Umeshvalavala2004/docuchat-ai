@@ -273,6 +273,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightText: branding.copyrightText,
         logoUrl: branding.logoUrl || "",
         accentColor: branding.accentColor || "#3b82f6",
+        fontFamily: branding.fontFamily || "Plus Jakarta Sans",
       });
       setBrandInitialized(true);
     }
