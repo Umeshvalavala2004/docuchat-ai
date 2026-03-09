@@ -292,7 +292,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
       </div>
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center">
-        <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved.</p>
+        <p className="text-[10px] text-muted-foreground">© 2026 Interface_IQ. All rights reserved. · <span className="font-mono text-muted-foreground/60">v1.2.0</span></p>
       </div>
     </div>
   );
