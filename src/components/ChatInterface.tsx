@@ -441,8 +441,12 @@ export default function ChatInterface({
               </div>
             ) : loadingQuestions ? <ChatSkeleton /> : (
               <>
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl gradient-primary p-6 mb-6 shadow-glow">
-                  <Sparkles className="h-12 w-12 text-primary-foreground" />
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="rounded-3xl gradient-primary p-6 mb-6 shadow-glow overflow-hidden">
+                  {branding.logoUrl ? (
+                    <img src={branding.logoUrl} alt="Logo" className="h-12 w-12 object-contain" />
+                  ) : (
+                    <Sparkles className="h-12 w-12 text-primary-foreground" />
+                  )}
                 </motion.div>
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{documentName.length > 30 ? documentName.slice(0, 30) + "…" : `Chat with ${documentName}`}</h3>
                 <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted-foreground leading-relaxed">Ask any question about your document. I'll find the answer and cite the exact source.</p>
