@@ -131,6 +131,7 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
   const { profile } = useProfile(userId);
+  const { branding } = useBranding();
   const userInitials = (profile?.name || profile?.email || "U").slice(0, 2).toUpperCase();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
