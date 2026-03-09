@@ -491,7 +491,6 @@ export default function ChatInterface({
                       <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
                     )}
                   </div>
-                  </div>
                 )}
                 <div className="max-w-[90%] sm:max-w-[85%] min-w-0">
                   {/* Mentioned docs tag above user message */}
