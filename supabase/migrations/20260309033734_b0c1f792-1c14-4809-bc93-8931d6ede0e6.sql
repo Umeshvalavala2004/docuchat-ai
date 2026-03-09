@@ -1,0 +1,1 @@
+ALTER TABLE public.branding_settings ADD COLUMN IF NOT EXISTS accent_color text NOT NULL DEFAULT '#3b82f6';

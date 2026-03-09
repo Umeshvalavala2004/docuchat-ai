@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       branding_settings: {
         Row: {
+          accent_color: string
           app_name: string
           copyright_text: string
           copyright_year: string
@@ -26,6 +27,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          accent_color?: string
           app_name?: string
           copyright_text?: string
           copyright_year?: string
@@ -36,6 +38,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          accent_color?: string
           app_name?: string
           copyright_text?: string
           copyright_year?: string
