@@ -1,0 +1,1 @@
+ALTER TABLE public.branding_settings ADD COLUMN IF NOT EXISTS font_family text NOT NULL DEFAULT 'Plus Jakarta Sans';
