@@ -485,7 +485,6 @@ export default function PdfViewer({
                           : ""
                       }`}
                     >
-                    >
                       <Page
                         pageNumber={pg}
                         scale={scale}
