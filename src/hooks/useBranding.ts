@@ -1,6 +1,27 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export const FONT_OPTIONS = [
+  { label: "Plus Jakarta Sans", value: "Plus Jakarta Sans", category: "Modern" },
+  { label: "Inter", value: "Inter", category: "Modern" },
+  { label: "DM Sans", value: "DM Sans", category: "Modern" },
+  { label: "Outfit", value: "Outfit", category: "Modern" },
+  { label: "Space Grotesk", value: "Space Grotesk", category: "Modern" },
+  { label: "Sora", value: "Sora", category: "Modern" },
+  { label: "Poppins", value: "Poppins", category: "Classic" },
+  { label: "Nunito", value: "Nunito", category: "Classic" },
+  { label: "Lato", value: "Lato", category: "Classic" },
+  { label: "Open Sans", value: "Open Sans", category: "Classic" },
+  { label: "Roboto", value: "Roboto", category: "Classic" },
+  { label: "Merriweather", value: "Merriweather", category: "Serif" },
+  { label: "Playfair Display", value: "Playfair Display", category: "Serif" },
+  { label: "Lora", value: "Lora", category: "Serif" },
+  { label: "Source Serif 4", value: "Source Serif 4", category: "Serif" },
+  { label: "IBM Plex Sans", value: "IBM Plex Sans", category: "Technical" },
+  { label: "JetBrains Mono", value: "JetBrains Mono", category: "Technical" },
+  { label: "Fira Code", value: "Fira Code", category: "Technical" },
+];
+
 export interface BrandingConfig {
   id?: string;
   appName: string;
@@ -9,6 +30,7 @@ export interface BrandingConfig {
   copyrightText: string;
   logoUrl: string | null;
   accentColor: string;
+  fontFamily: string;
 }
 
 const DEFAULT_BRANDING: BrandingConfig = {
@@ -18,6 +40,7 @@ const DEFAULT_BRANDING: BrandingConfig = {
   copyrightText: "Interface_IQ. All rights reserved.",
   logoUrl: null,
   accentColor: "#3b82f6",
+  fontFamily: "Plus Jakarta Sans",
 };
 
 function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
@@ -47,22 +70,31 @@ function applyAccentColor(hex: string) {
   const { h, s, l } = hsl;
   const hslStr = `${h} ${s}% ${l}%`;
   
-  // Primary color
   root.style.setProperty("--primary", hslStr);
   root.style.setProperty("--primary-foreground", "0 0% 100%");
   root.style.setProperty("--ring", hslStr);
-
-  // Glow variant (slightly shifted hue, higher lightness)
   root.style.setProperty("--primary-glow", `${(h + 18) % 360} ${Math.min(s + 10, 100)}% ${Math.min(l + 7, 100)}%`);
-
-  // Gradient tokens
   root.style.setProperty("--gradient-start", hslStr);
   root.style.setProperty("--gradient-end", `${(h + 28) % 360} ${Math.min(s, 100)}% ${Math.min(l + 5, 95)}%`);
   root.style.setProperty("--gradient-accent", `${(h - 22 + 360) % 360} ${s}% ${l}%`);
-
-  // Sidebar primary
   root.style.setProperty("--sidebar-primary", hslStr);
   root.style.setProperty("--sidebar-ring", hslStr);
+}
+
+function loadGoogleFont(fontFamily: string) {
+  const id = `google-font-${fontFamily.replace(/\s+/g, "-").toLowerCase()}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily)}:wght@300;400;500;600;700;800&display=swap`;
+  document.head.appendChild(link);
+}
+
+function applyFont(fontFamily: string) {
+  loadGoogleFont(fontFamily);
+  document.documentElement.style.setProperty("--font-sans", `'${fontFamily}', 'Inter', system-ui, -apple-system, sans-serif`);
+  document.body.style.fontFamily = `'${fontFamily}', 'Inter', system-ui, -apple-system, sans-serif`;
 }
 
 export function useBranding() {
@@ -85,9 +117,11 @@ export function useBranding() {
           copyrightText: (data as any).copyright_text || DEFAULT_BRANDING.copyrightText,
           logoUrl: (data as any).logo_url || null,
           accentColor: (data as any).accent_color || DEFAULT_BRANDING.accentColor,
+          fontFamily: (data as any).font_family || DEFAULT_BRANDING.fontFamily,
         };
         setBranding(config);
         applyAccentColor(config.accentColor);
+        applyFont(config.fontFamily);
       }
     } catch (e) {
       console.error("Failed to load branding:", e);
@@ -101,9 +135,8 @@ export function useBranding() {
     const updated = { ...branding, ...config };
     setBranding(updated);
 
-    if (updated.accentColor) {
-      applyAccentColor(updated.accentColor);
-    }
+    if (updated.accentColor) applyAccentColor(updated.accentColor);
+    if (updated.fontFamily) applyFont(updated.fontFamily);
 
     const payload: Record<string, any> = {
       app_name: updated.appName,
@@ -112,6 +145,7 @@ export function useBranding() {
       copyright_text: updated.copyrightText,
       logo_url: updated.logoUrl,
       accent_color: updated.accentColor,
+      font_family: updated.fontFamily,
       updated_at: new Date().toISOString(),
     };
 
