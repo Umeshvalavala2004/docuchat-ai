@@ -24,12 +24,12 @@ import TestimonialCarousel from "@/components/TestimonialCarousel";
 export type ToolTab = "chat" | "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
 
 const TABS: { id: ToolTab; labelKey: string; icon: React.ReactNode; subtitle: string; inputPlaceholder: string }[] = [
-  { id: "chat", labelKey: "Chat", icon: <MessageSquare className="h-4 w-4" />, subtitle: "Chat with any 📁 file, 🎬 video or 🔗 website", inputPlaceholder: "Ask to start a chat" },
-  { id: "summary", labelKey: "Summary", icon: <AlignLeft className="h-4 w-4" />, subtitle: "Summarize any 📁 file, 📝 text or 🔗 website", inputPlaceholder: "Paste text to summarize..." },
+  { id: "chat", labelKey: "Chat", icon: <MessageSquare className="h-4 w-4" />, subtitle: "Chat with any 📁 file or 📝 text", inputPlaceholder: "Ask to start a chat" },
+  { id: "summary", labelKey: "Summary", icon: <AlignLeft className="h-4 w-4" />, subtitle: "Summarize any 📁 file or 📝 text", inputPlaceholder: "Paste text to summarize..." },
   { id: "ai_detector", labelKey: "AI Detector", icon: <Bot className="h-4 w-4" />, subtitle: "Detect AI-generated content in any text", inputPlaceholder: "Paste text to analyze..." },
-  { id: "ai_writer", labelKey: "AI Writer", icon: <PenLine className="h-4 w-4" />, subtitle: "Write content from any 📁 file, 📝 text or 🔗 website", inputPlaceholder: "Describe what to write..." },
+  { id: "ai_writer", labelKey: "AI Writer", icon: <PenLine className="h-4 w-4" />, subtitle: "Write content from any 📁 file or 📝 text", inputPlaceholder: "Describe what to write..." },
   { id: "flashcards", labelKey: "Flashcards", icon: <Layers className="h-4 w-4" />, subtitle: "Create flashcards from any 📁 file or 📝 text", inputPlaceholder: "Paste text to create flashcards..." },
-  { id: "slides", labelKey: "Slides", icon: <Presentation className="h-4 w-4" />, subtitle: "Create slides from any 📁 file, 📝 text, 🎬 video or 🔗 website", inputPlaceholder: "Paste text or describe topic..." },
+  { id: "slides", labelKey: "Slides", icon: <Presentation className="h-4 w-4" />, subtitle: "Create slides from any 📁 file or 📝 text", inputPlaceholder: "Paste text or describe topic..." },
   { id: "research", labelKey: "Research", icon: <Search className="h-4 w-4" />, subtitle: "Research any topic with AI-powered insights", inputPlaceholder: "Enter a topic to research..." },
 ];
 
