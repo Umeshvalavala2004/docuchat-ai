@@ -997,7 +997,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 {/* Live Preview */}
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Preview</h3>
-                  <div className="rounded-lg border border-border bg-background p-4 space-y-4">
+                  <div className="rounded-lg border border-border bg-background p-4 space-y-4" style={{ fontFamily: `'${brandForm.fontFamily}', sans-serif` }}>
                     <div className="flex items-center gap-2.5">
                       {brandForm.logoUrl ? (
                         <img src={brandForm.logoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />
