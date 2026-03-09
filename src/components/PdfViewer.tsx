@@ -357,17 +357,27 @@ export default function PdfViewer({
 
       {/* Highlight indicator */}
       {highlightPage && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 border-b border-primary/10">
-          <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] text-primary font-medium">
-            Showing source from page {highlightPage}
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2.5 px-3 py-2 bg-primary/8 border-b border-primary/15"
+        >
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-[11px] text-primary font-semibold">
+            Page {highlightPage}
           </span>
           {highlightText && (
-            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-              — "{highlightText.slice(0, 50)}..."
+            <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
+              — "{highlightText.slice(0, 60)}…"
             </span>
           )}
-        </div>
+          <button
+            onClick={() => scrollToPage(highlightPage)}
+            className="ml-auto text-[10px] text-primary hover:text-primary/80 font-medium hover:underline"
+          >
+            Jump to page
+          </button>
+        </motion.div>
       )}
 
       {/* Content area */}
