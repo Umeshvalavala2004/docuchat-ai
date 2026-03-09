@@ -904,6 +904,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           placeholder="Interface_IQ. All rights reserved."
                           className="h-10 rounded-xl"
                         />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
