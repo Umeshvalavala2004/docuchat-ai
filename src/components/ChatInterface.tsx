@@ -18,6 +18,7 @@ import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useBranding } from "@/hooks/useBranding";
 
 interface ChatInterfaceProps {
   documentId: string;
