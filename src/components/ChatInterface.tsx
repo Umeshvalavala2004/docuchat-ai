@@ -73,19 +73,24 @@ function ExpandableSource({ src, index, onNavigate, documentName }: { src: Sourc
   const [expanded, setExpanded] = useState(false);
   const scoreColor = src.score >= 0.8 ? "text-success" : src.score >= 0.6 ? "text-primary" : "text-warning";
   return (
-    <div className="flex flex-col w-full rounded-xl bg-accent/50 border border-border/30 p-2.5 text-left text-xs hover:bg-accent hover:border-primary/20 transition-all">
-      <button onClick={() => setExpanded(!expanded)} className="flex items-start gap-2 w-full text-left">
+    <div className="flex flex-col w-full rounded-xl bg-accent/50 border border-border/30 overflow-hidden text-left text-xs hover:bg-accent hover:border-primary/20 transition-all">
+      <button onClick={() => setExpanded(!expanded)} className="flex items-start gap-2.5 w-full text-left p-3">
         <div className="mt-0.5 h-5 w-5 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <FileText className="h-3 w-3 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          {documentName && <span className="text-[10px] font-semibold text-foreground block truncate mb-0.5">{documentName}</span>}
-          <span className={`text-muted-foreground ${expanded ? "" : "line-clamp-2"}`}>{src.content}</span>
+          {documentName && (
+            <div className="mb-1.5">
+              <span className="text-[10px] font-semibold text-foreground block truncate">{documentName}</span>
+              <div className="h-[2px] w-full rounded-full bg-primary/20 mt-1" />
+            </div>
+          )}
+          <span className={`text-muted-foreground leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>{src.content}</span>
         </div>
-        {expanded ? <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground mt-1" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground mt-1" />}
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
       </button>
-      <div className="flex items-center gap-2 mt-1.5 ml-7">
-        <span className="text-[10px] text-muted-foreground/70">Chunk {src.chunk_index + 1}</span>
+      <div className="flex items-center gap-2.5 px-3 pb-2.5 ml-[30px]">
+        <span className="text-[10px] text-muted-foreground/60 font-medium">Chunk {src.chunk_index + 1}</span>
         {src.page_number && (
           <button onClick={() => onNavigate?.(src.page_number, src.content?.slice(0, 80))} className="text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer font-medium">📄 Page {src.page_number}</button>
         )}
