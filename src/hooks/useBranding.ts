@@ -66,19 +66,35 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
 function applyAccentColor(hex: string) {
   const hsl = hexToHSL(hex);
   if (!hsl) return;
-  const root = document.documentElement;
   const { h, s, l } = hsl;
-  const hslStr = `${h} ${s}% ${l}%`;
-  
+  const isDark = document.documentElement.classList.contains("dark");
+
+  // In dark mode, boost lightness for visibility; in light mode, cap it for contrast
+  const adjustedL = isDark ? Math.min(l + 12, 78) : Math.max(l, 35);
+  const hslStr = `${h} ${s}% ${adjustedL}%`;
+
+  const glowL = isDark ? Math.min(adjustedL + 10, 82) : Math.min(l + 7, 70);
+  const endL = isDark ? Math.min(adjustedL + 8, 78) : Math.min(l + 5, 65);
+
+  const root = document.documentElement;
   root.style.setProperty("--primary", hslStr);
   root.style.setProperty("--primary-foreground", "0 0% 100%");
   root.style.setProperty("--ring", hslStr);
-  root.style.setProperty("--primary-glow", `${(h + 18) % 360} ${Math.min(s + 10, 100)}% ${Math.min(l + 7, 100)}%`);
+  root.style.setProperty("--primary-glow", `${(h + 18) % 360} ${Math.min(s + 10, 100)}% ${glowL}%`);
   root.style.setProperty("--gradient-start", hslStr);
-  root.style.setProperty("--gradient-end", `${(h + 28) % 360} ${Math.min(s, 100)}% ${Math.min(l + 5, 95)}%`);
-  root.style.setProperty("--gradient-accent", `${(h - 22 + 360) % 360} ${s}% ${l}%`);
+  root.style.setProperty("--gradient-end", `${(h + 28) % 360} ${Math.min(s, 100)}% ${endL}%`);
+  root.style.setProperty("--gradient-accent", `${(h - 22 + 360) % 360} ${s}% ${adjustedL}%`);
   root.style.setProperty("--sidebar-primary", hslStr);
   root.style.setProperty("--sidebar-ring", hslStr);
+}
+
+// Re-apply accent color when theme changes
+function observeThemeChanges(hex: string): MutationObserver {
+  const observer = new MutationObserver(() => {
+    applyAccentColor(hex);
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return observer;
 }
 
 function loadGoogleFont(fontFamily: string) {
@@ -129,7 +145,16 @@ export function useBranding() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  // Load branding and observe theme changes to re-apply accent color
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!branding.accentColor) return;
+    const observer = observeThemeChanges(branding.accentColor);
+    return () => observer.disconnect();
+  }, [branding.accentColor]);
 
   const updateBranding = async (config: Partial<BrandingConfig>) => {
     const updated = { ...branding, ...config };
