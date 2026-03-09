@@ -4,7 +4,7 @@ import {
   Shield, Check, X, Clock, User, ChevronLeft,
   Loader2, CheckCircle2, XCircle, AlertCircle,
   Users, FileText, MessageSquare, Crown, Ban,
-  ArrowUpCircle, ArrowDownCircle, BarChart3, Eye,
+  ArrowUpCircle, ArrowDownCircle, BarChart3, Eye, RotateCcw,
   TrendingUp, Activity, Search as SearchIcon, Tag,
   Palette, Save, Image, Trash2,
 } from "lucide-react";
@@ -1017,10 +1017,23 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   </div>
                 </div>
 
-                <Button onClick={handleSaveBranding} disabled={brandSaving} className="rounded-xl gradient-primary border-0 gap-2">
-                  {brandSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Branding
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setBrandForm(f => ({ ...f, accentColor: "#3b82f6", fontFamily: "Plus Jakarta Sans" }));
+                      toast.info("Defaults restored. Click 'Save Branding' to apply.");
+                    }}
+                    className="rounded-xl gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset Defaults
+                  </Button>
+                  <Button onClick={handleSaveBranding} disabled={brandSaving} className="rounded-xl gradient-primary border-0 gap-2">
+                    {brandSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Branding
+                  </Button>
+                </div>
               </motion.div>
             )}
           </div>
