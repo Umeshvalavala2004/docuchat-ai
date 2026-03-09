@@ -19,7 +19,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart } from "recharts";
-import { useBranding } from "@/hooks/useBranding";
+import { useBranding, FONT_OPTIONS } from "@/hooks/useBranding";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ProRequest {
   id: string;
@@ -63,7 +64,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const { branding, updateBranding, refetch: refetchBranding } = useBranding();
-  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "", accentColor: "#3b82f6" });
+  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "", accentColor: "#3b82f6", fontFamily: "Plus Jakarta Sans" });
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -273,6 +274,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightText: branding.copyrightText,
         logoUrl: branding.logoUrl || "",
         accentColor: branding.accentColor || "#3b82f6",
+        fontFamily: branding.fontFamily || "Plus Jakarta Sans",
       });
       setBrandInitialized(true);
     }
@@ -288,6 +290,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightText: brandForm.copyrightText,
         logoUrl: brandForm.logoUrl || null,
         accentColor: brandForm.accentColor,
+        fontFamily: brandForm.fontFamily,
       });
       toast.success("Branding updated! Changes will appear across the app.");
     } catch (e: any) {
@@ -938,6 +941,28 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </div>
 
                     <div className="space-y-2">
+                      <Label className="text-xs font-medium">Font Family</Label>
+                      <Select value={brandForm.fontFamily} onValueChange={(v) => setBrandForm({ ...brandForm, fontFamily: v })}>
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue placeholder="Choose a font" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Modern", "Classic", "Serif", "Technical"].map((cat) => (
+                            <SelectGroup key={cat}>
+                              <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">{cat}</SelectLabel>
+                              {FONT_OPTIONS.filter((f) => f.category === cat).map((f) => (
+                                <SelectItem key={f.value} value={f.value}>
+                                  <span style={{ fontFamily: `'${f.value}', sans-serif` }}>{f.label}</span>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">Select a Google Font to apply across the entire app.</p>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label className="text-xs font-medium">Logo Image</Label>
                       <div className="flex items-center gap-3">
                         {brandForm.logoUrl ? (
@@ -972,7 +997,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 {/* Live Preview */}
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Preview</h3>
-                  <div className="rounded-lg border border-border bg-background p-4 space-y-4">
+                  <div className="rounded-lg border border-border bg-background p-4 space-y-4" style={{ fontFamily: `'${brandForm.fontFamily}', sans-serif` }}>
                     <div className="flex items-center gap-2.5">
                       {brandForm.logoUrl ? (
                         <img src={brandForm.logoUrl} className="h-8 w-8 rounded-xl object-cover" alt="Logo" />

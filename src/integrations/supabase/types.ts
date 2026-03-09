@@ -20,6 +20,7 @@ export type Database = {
           app_name: string
           copyright_text: string
           copyright_year: string
+          font_family: string
           id: string
           logo_url: string | null
           subtitle: string
@@ -31,6 +32,7 @@ export type Database = {
           app_name?: string
           copyright_text?: string
           copyright_year?: string
+          font_family?: string
           id?: string
           logo_url?: string | null
           subtitle?: string
@@ -42,6 +44,7 @@ export type Database = {
           app_name?: string
           copyright_text?: string
           copyright_year?: string
+          font_family?: string
           id?: string
           logo_url?: string | null
           subtitle?: string
