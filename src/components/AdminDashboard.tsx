@@ -63,7 +63,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const { branding, updateBranding, refetch: refetchBranding } = useBranding();
-  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "" });
+  const [brandForm, setBrandForm] = useState({ appName: "", subtitle: "", copyrightYear: "", copyrightText: "", logoUrl: "", accentColor: "#3b82f6" });
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandInitialized, setBrandInitialized] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -272,6 +272,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightYear: branding.copyrightYear,
         copyrightText: branding.copyrightText,
         logoUrl: branding.logoUrl || "",
+        accentColor: branding.accentColor || "#3b82f6",
       });
       setBrandInitialized(true);
     }
@@ -286,6 +287,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightYear: brandForm.copyrightYear,
         copyrightText: brandForm.copyrightText,
         logoUrl: brandForm.logoUrl || null,
+        accentColor: brandForm.accentColor,
       });
       toast.success("Branding updated! Changes will appear across the app.");
     } catch (e: any) {
@@ -903,6 +905,36 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                           className="h-10 rounded-xl"
                         />
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Accent Color</Label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={brandForm.accentColor}
+                          onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
+                          className="h-10 w-10 rounded-lg border border-border cursor-pointer bg-transparent p-0.5"
+                        />
+                        <Input
+                          value={brandForm.accentColor}
+                          onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
+                          placeholder="#3b82f6"
+                          className="h-10 rounded-xl font-mono text-xs w-32"
+                        />
+                        <div className="flex gap-1.5">
+                          {["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"].map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setBrandForm({ ...brandForm, accentColor: c })}
+                              className={`h-7 w-7 rounded-full border-2 transition-all ${brandForm.accentColor === c ? "border-foreground scale-110" : "border-transparent hover:scale-105"}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">This color themes the primary buttons, links, and accents across the entire app.</p>
                     </div>
 
                     <div className="space-y-2">
