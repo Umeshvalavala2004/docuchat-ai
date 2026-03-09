@@ -272,6 +272,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
         copyrightYear: branding.copyrightYear,
         copyrightText: branding.copyrightText,
         logoUrl: branding.logoUrl || "",
+        accentColor: branding.accentColor || "#3b82f6",
       });
       setBrandInitialized(true);
     }
