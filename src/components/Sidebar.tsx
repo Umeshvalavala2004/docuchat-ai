@@ -744,8 +744,44 @@ export default function Sidebar({
           </div>
         )}
         {userRole === "pro_user" && (
-          <div className="flex items-center gap-2 w-full rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <Crown className="h-3.5 w-3.5" /><span>{t("pro_plan")}</span><span className="ml-auto text-[10px] opacity-70">{t("unlimited")}</span>
+          <div className="relative flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-xs font-semibold overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, hsl(43 96% 56% / 0.12), hsl(38 92% 50% / 0.08), hsl(28 80% 52% / 0.06))',
+              border: '1px solid hsl(43 80% 60% / 0.25)',
+            }}
+          >
+            <div className="absolute inset-0 opacity-30"
+              style={{
+                background: 'radial-gradient(ellipse at 10% 50%, hsl(43 96% 56% / 0.2), transparent 60%), radial-gradient(ellipse at 90% 50%, hsl(28 80% 52% / 0.15), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-center h-6 w-6 rounded-lg shadow-sm"
+              style={{
+                background: 'linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%), hsl(28 80% 52%))',
+                boxShadow: '0 2px 8px hsl(43 96% 56% / 0.3)',
+              }}
+            >
+              <Crown className="h-3.5 w-3.5 text-white drop-shadow-sm" />
+            </div>
+            <div className="relative flex flex-col">
+              <span className="text-xs font-bold" style={{ color: 'hsl(38 80% 40%)' }}>
+                {t("pro_plan")}
+              </span>
+              <span className="text-[9px] font-medium" style={{ color: 'hsl(38 60% 50% / 0.8)' }}>
+                ✦ {t("unlimited")}
+              </span>
+            </div>
+            <div className="relative ml-auto">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(43 96% 56% / 0.15), hsl(38 92% 50% / 0.1))',
+                  color: 'hsl(38 80% 42%)',
+                  border: '1px solid hsl(43 80% 60% / 0.2)',
+                }}
+              >
+                Premium
+              </span>
+            </div>
           </div>
         )}
 
