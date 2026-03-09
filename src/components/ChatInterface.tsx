@@ -18,6 +18,7 @@ import { useDocumentShares, useChatSessionShares } from "@/hooks/useSharing";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useBranding } from "@/hooks/useBranding";
 
 interface ChatInterfaceProps {
   documentId: string;
@@ -130,6 +131,7 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const { usage, checkAndIncrement } = useDailyUsage(userId);
   const { profile } = useProfile(userId);
+  const { branding } = useBranding();
   const userInitials = (profile?.name || profile?.email || "U").slice(0, 2).toUpperCase();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages || []);
   const [input, setInput] = useState("");
@@ -482,8 +484,12 @@ export default function ChatInterface({
             {messages.map((msg, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex gap-2 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="mt-1 flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-                    <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+                  <div className="mt-1 flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm overflow-hidden">
+                    {branding.logoUrl ? (
+                      <img src={branding.logoUrl} alt="AI" className="h-full w-full object-cover" />
+                    ) : (
+                      <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+                    )}
                   </div>
                 )}
                 <div className="max-w-[90%] sm:max-w-[85%] min-w-0">
