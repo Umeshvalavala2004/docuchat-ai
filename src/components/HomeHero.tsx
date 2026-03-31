@@ -54,9 +54,9 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
   const currentTab = TABS.find((tab) => tab.id === activeTab)!;
 
   const handleFile = async (file: File) => {
-    const maxSize = 20 * 1024 * 1024;
+    const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error("File too large. Maximum size is 20MB.");
+      toast.error("File too large. Maximum size is 100MB.");
       return;
     }
     const ext = file.name.split(".").pop()?.toLowerCase();
@@ -225,6 +225,7 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
                       upload <Upload className="h-3.5 w-3.5" />
                     </span>
                   </p>
+                  <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT • Max 100MB</p>
                 </motion.div>
               )}
             </AnimatePresence>

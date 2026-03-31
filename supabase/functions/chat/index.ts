@@ -17,6 +17,89 @@ function decryptKey(encrypted: string, secret: string): string {
   return new TextDecoder().decode(result);
 }
 
+async function getAuthenticatedUserId(authHeader: string, supabaseUrl: string): Promise<string | null> {
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!supabaseAnonKey || !authHeader.startsWith("Bearer ")) return null;
+
+  try {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) return null;
+    return claimsData.claims.sub as string;
+  } catch (error) {
+    console.error("Failed to resolve authenticated user:", error);
+    return null;
+  }
+}
+
+async function getUserGeminiApiKey(supabase: any, userId: string | null, secret: string): Promise<string | null> {
+  if (!userId) return null;
+
+  try {
+    const { data } = await supabase
+      .from("user_api_keys")
+      .select("encrypted_key, is_valid")
+      .eq("user_id", userId)
+      .eq("provider", "gemini")
+      .maybeSingle();
+
+    if (!data?.encrypted_key || data.is_valid === false) return null;
+    return decryptKey(data.encrypted_key, secret);
+  } catch (error) {
+    console.error("Failed to load Gemini API key:", error);
+    return null;
+  }
+}
+
+function mapGeminiFallbackModel(modelId: string): string {
+  return modelId.includes("pro") ? "gemini-1.5-pro" : "gemini-1.5-flash";
+}
+
+async function fetchAiWithFallback(body: Record<string, unknown>, lovableApiKey: string | null, geminiApiKey: string | null) {
+  const attempts = [
+    lovableApiKey
+      ? {
+          label: "lovable",
+          url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+          auth: `Bearer ${lovableApiKey}`,
+          body,
+        }
+      : null,
+    geminiApiKey
+      ? {
+          label: "gemini",
+          url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          auth: `Bearer ${geminiApiKey}`,
+          body: { ...body, model: mapGeminiFallbackModel(String(body.model || "gemini-1.5-flash")) },
+        }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; url: string; auth: string; body: Record<string, unknown> }>;
+
+  let lastError: { status: number; text: string } | null = null;
+
+  for (const attempt of attempts) {
+    const response = await fetch(attempt.url, {
+      method: "POST",
+      headers: { Authorization: attempt.auth, "Content-Type": "application/json" },
+      body: JSON.stringify(attempt.body),
+    });
+
+    if (response.ok) return { response, error: null };
+
+    const text = await response.text();
+    console.error(`${attempt.label} AI error ${response.status}: ${text}`);
+    lastError = { status: response.status, text };
+
+    const shouldTryFallback = attempt.label === "lovable" && Boolean(geminiApiKey) && response.status === 402;
+    if (!shouldTryFallback) break;
+  }
+
+  return { response: null, error: lastError };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -36,6 +119,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const userId = await getAuthenticatedUserId(authHeader, supabaseUrl);
 
     // Determine if this is a BYOK model request
     const isByok = modelId?.startsWith("byok-");
@@ -46,14 +130,7 @@ serve(async (req) => {
     let apiAuthHeader = `Bearer ${LOVABLE_API_KEY}`;
 
     if (isByok) {
-      // Get user ID from auth
-      const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await userSupabase.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) throw new Error("Unauthorized");
-      const userId = claimsData.claims.sub as string;
+      if (!userId) throw new Error("Unauthorized");
 
       // Determine provider and actual model from BYOK model ID
       if (modelId === "byok-gemini-pro") {
@@ -253,31 +330,48 @@ ${context}`;
     }
     messages.push({ role: "user", content: message });
 
-    // Stream response from appropriate LLM
-    const llmResponse = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: { Authorization: apiAuthHeader, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: actualModelId, messages, stream: true }),
-    });
+    const requestBody = { model: actualModelId, messages, stream: true };
+    const geminiApiKey = !isByok ? await getUserGeminiApiKey(supabase, userId, supabaseServiceKey) : null;
 
-    if (!llmResponse.ok) {
-      if (llmResponse.status === 429) {
+    // Stream response from appropriate LLM
+    let llmResponse: Response | null = null;
+    let llmError: { status: number; text: string } | null = null;
+
+    if (!isByok && apiEndpoint === "https://ai.gateway.lovable.dev/v1/chat/completions") {
+      const result = await fetchAiWithFallback(requestBody, LOVABLE_API_KEY, geminiApiKey);
+      llmResponse = result.response;
+      llmError = result.error;
+    } else {
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: { Authorization: apiAuthHeader, "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        llmResponse = response;
+      } else {
+        llmError = { status: response.status, text: await response.text() };
+      }
+    }
+
+    if (!llmResponse) {
+      if (llmError?.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (llmResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
+      if (llmError?.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required. Please add credits or save a valid Gemini API key in Settings." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (llmResponse.status === 401) {
+      if (llmError?.status === 401 || llmError?.status === 403) {
         return new Response(JSON.stringify({ error: "Invalid API key. Please update your API key in Settings." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const errText = await llmResponse.text();
-      throw new Error(`LLM error ${llmResponse.status}: ${errText}`);
+      throw new Error(`LLM error ${llmError?.status || 500}: ${llmError?.text || "Unknown error"}`);
     }
 
     const encoder = new TextEncoder();

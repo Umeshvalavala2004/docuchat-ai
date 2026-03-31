@@ -6,6 +6,95 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function decryptKey(encrypted: string, secret: string): string {
+  const decoded = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
+  const secretBytes = new TextEncoder().encode(secret);
+  const result = new Uint8Array(decoded.length);
+  for (let i = 0; i < decoded.length; i++) {
+    result[i] = decoded[i] ^ secretBytes[i % secretBytes.length];
+  }
+  return new TextDecoder().decode(result);
+}
+
+async function getUserGeminiApiKey(
+  authHeader: string,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  supabaseServiceKey: string,
+) {
+  try {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) return null;
+
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data } = await serviceClient
+      .from("user_api_keys")
+      .select("encrypted_key, is_valid")
+      .eq("user_id", claimsData.claims.sub as string)
+      .eq("provider", "gemini")
+      .maybeSingle();
+
+    if (!data?.encrypted_key || data.is_valid === false) return null;
+    return decryptKey(data.encrypted_key, supabaseServiceKey);
+  } catch (error) {
+    console.error("Failed to load Gemini API key:", error);
+    return null;
+  }
+}
+
+function mapGeminiModel() {
+  return "gemini-1.5-flash";
+}
+
+async function fetchAiWithFallback(body: Record<string, unknown>, lovableApiKey: string | null, geminiApiKey: string | null) {
+  const attempts = [
+    lovableApiKey
+      ? {
+          label: "lovable",
+          url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+          auth: `Bearer ${lovableApiKey}`,
+          body,
+        }
+      : null,
+    geminiApiKey
+      ? {
+          label: "gemini",
+          url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          auth: `Bearer ${geminiApiKey}`,
+          body: { ...body, model: mapGeminiModel() },
+        }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; url: string; auth: string; body: Record<string, unknown> }>;
+
+  let lastError: { status: number; text: string } | null = null;
+
+  for (const attempt of attempts) {
+    const response = await fetch(attempt.url, {
+      method: "POST",
+      headers: {
+        Authorization: attempt.auth,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attempt.body),
+    });
+
+    if (response.ok) return { response, error: null };
+
+    const text = await response.text();
+    console.error(`${attempt.label} AI error ${response.status}: ${text}`);
+    lastError = { status: response.status, text };
+
+    const shouldTryFallback = attempt.label === "lovable" && Boolean(geminiApiKey) && response.status === 402;
+    if (!shouldTryFallback) break;
+  }
+
+  return { response: null, error: lastError };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -16,12 +105,12 @@ serve(async (req) => {
     const { documentId, type } = await req.json();
     if (!documentId) throw new Error("documentId is required");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? null;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const geminiApiKey = await getUserGeminiApiKey(authHeader, supabaseUrl, supabaseAnonKey, supabaseServiceKey);
 
     // Get first chunks for context
     const { data: chunks } = await supabase
@@ -46,26 +135,18 @@ serve(async (req) => {
       throw new Error("Invalid type. Use 'questions' or 'keypoints'");
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: content.slice(0, 4000) },
-        ],
-      }),
-    });
+    const { response, error } = await fetchAiWithFallback({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: content.slice(0, 4000) },
+      ],
+    }, LOVABLE_API_KEY, geminiApiKey);
 
-    if (!response.ok) {
-      const t = await response.text();
-      console.error(`AI gateway error ${response.status}: ${t}`);
+    if (!response) {
+      console.error(`AI fallback failed: ${error?.status} ${error?.text}`);
       // Return empty items gracefully so the UI doesn't break
-      return new Response(JSON.stringify({ items: [], error: `Upstream ${response.status}` }), {
+      return new Response(JSON.stringify({ items: [], error: `Upstream ${error?.status || 500}` }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

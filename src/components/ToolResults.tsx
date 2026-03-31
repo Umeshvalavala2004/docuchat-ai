@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type ToolTab = "summary" | "ai_detector" | "ai_writer" | "flashcards" | "slides" | "research";
@@ -51,13 +52,16 @@ export default function ToolResults({ toolType, documentId, text, documentName, 
       contentRef.current = "";
 
       try {
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
         const resp = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tool-process`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({ toolType, documentId, text }),
           }

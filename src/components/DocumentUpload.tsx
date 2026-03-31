@@ -25,9 +25,9 @@ export default function DocumentUpload({ userId, onDocumentUploaded, workspaceId
   }, [userId, workspaceId]);
 
   const handleFile = async (file: File) => {
-    const maxSize = 20 * 1024 * 1024; // 20MB
+    const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
-      toast.error("File too large. Maximum size is 20MB.");
+      toast.error("File too large. Maximum size is 100MB.");
       return;
     }
 
@@ -132,7 +132,7 @@ export default function DocumentUpload({ userId, onDocumentUploaded, workspaceId
                   Drop your document here
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  PDF, DOCX, or TXT • Max 20MB
+                  PDF, DOCX, or TXT • Max 100MB
                 </p>
               </div>
             </motion.div>

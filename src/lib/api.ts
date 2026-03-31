@@ -31,6 +31,11 @@ export interface RetrievalMetrics {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+async function getEdgeFunctionAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+}
+
 export async function streamChat({
   message,
   documentId,
@@ -59,11 +64,12 @@ export async function streamChat({
   onError: (error: string) => void;
 }) {
   try {
+    const accessToken = await getEdgeFunctionAccessToken();
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         message,
