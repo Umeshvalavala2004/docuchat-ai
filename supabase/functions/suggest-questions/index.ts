@@ -62,20 +62,13 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      throw new Error(`AI error: ${t}`);
+      console.error(`AI gateway error ${response.status}: ${t}`);
+      // Return empty items gracefully so the UI doesn't break
+      return new Response(JSON.stringify({ items: [], error: `Upstream ${response.status}` }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
