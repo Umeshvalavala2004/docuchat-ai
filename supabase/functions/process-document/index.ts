@@ -6,6 +6,95 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function decryptKey(encrypted: string, secret: string): string {
+  const decoded = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
+  const secretBytes = new TextEncoder().encode(secret);
+  const result = new Uint8Array(decoded.length);
+  for (let i = 0; i < decoded.length; i++) {
+    result[i] = decoded[i] ^ secretBytes[i % secretBytes.length];
+  }
+  return new TextDecoder().decode(result);
+}
+
+async function getUserGeminiApiKey(
+  authHeader: string,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  supabaseServiceKey: string,
+) {
+  try {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) return null;
+
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data } = await serviceClient
+      .from("user_api_keys")
+      .select("encrypted_key, is_valid")
+      .eq("user_id", claimsData.claims.sub as string)
+      .eq("provider", "gemini")
+      .maybeSingle();
+
+    if (!data?.encrypted_key || data.is_valid === false) return null;
+    return decryptKey(data.encrypted_key, supabaseServiceKey);
+  } catch (error) {
+    console.error("Failed to load Gemini API key:", error);
+    return null;
+  }
+}
+
+function mapGeminiModel(model: string) {
+  return model.includes("pro") ? "gemini-1.5-pro" : "gemini-1.5-flash";
+}
+
+async function fetchAiWithFallback(body: Record<string, unknown>, lovableApiKey: string | null, geminiApiKey: string | null) {
+  const attempts = [
+    lovableApiKey
+      ? {
+          label: "lovable",
+          url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+          auth: `Bearer ${lovableApiKey}`,
+          body,
+        }
+      : null,
+    geminiApiKey
+      ? {
+          label: "gemini",
+          url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          auth: `Bearer ${geminiApiKey}`,
+          body: { ...body, model: mapGeminiModel(String(body.model || "gemini-1.5-flash")) },
+        }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; url: string; auth: string; body: Record<string, unknown> }>;
+
+  let lastError: { status: number; text: string } | null = null;
+
+  for (const attempt of attempts) {
+    const response = await fetch(attempt.url, {
+      method: "POST",
+      headers: {
+        Authorization: attempt.auth,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attempt.body),
+    });
+
+    if (response.ok) return { response, error: null };
+
+    const text = await response.text();
+    console.error(`${attempt.label} AI error ${response.status}: ${text}`);
+    lastError = { status: response.status, text };
+
+    const shouldTryFallback = attempt.label === "lovable" && Boolean(geminiApiKey) && response.status === 402;
+    if (!shouldTryFallback) break;
+  }
+
+  return { response: null, error: lastError };
+}
+
 async function extractTextFromPDFWithUnpdf(bytes: Uint8Array): Promise<{ text: string; quality: "good" | "poor" }> {
   try {
     const { extractText, getDocumentProxy } = await import("https://esm.sh/unpdf@0.12.1");
@@ -28,38 +117,38 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-async function extractTextWithVisionAPI(pdfBytes: Uint8Array, apiKey: string): Promise<string> {
+async function extractTextWithVisionAPI(pdfBytes: Uint8Array, lovableApiKey: string | null, geminiApiKey: string | null): Promise<string> {
   console.log("Falling back to Vision API for scanned PDF...");
   const base64Pdf = arrayBufferToBase64(pdfBytes.buffer);
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Extract ALL text from this PDF document. Return only the extracted text content, preserving paragraphs and structure. Do not add any commentary." },
-            { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64Pdf}` } },
-          ],
-        },
-      ],
-    }),
-  });
+  const { response, error } = await fetchAiWithFallback({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Extract ALL text from this PDF document. Return only the extracted text content, preserving paragraphs and structure. Do not add any commentary." },
+          { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64Pdf}` } },
+        ],
+      },
+    ],
+  }, lovableApiKey, geminiApiKey);
 
-  if (!response.ok) {
-    const err = await response.text();
-    console.error("Vision API error:", err);
-    throw new Error("Vision API extraction failed");
+  if (!response) {
+    throw new Error(error?.status === 402
+      ? "AI OCR needs credits or a valid Gemini API key in Settings."
+      : "Vision API extraction failed");
   }
 
   const result = await response.json();
   return result.choices?.[0]?.message?.content || "";
+}
+
+function generateFallbackSummary(text: string): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  const sentences = normalized.match(/[^.!?]+[.!?]+/g) || [normalized];
+  return sentences.slice(0, 2).join(" ").slice(0, 320);
 }
 
 function cleanText(text: string): string {
@@ -105,12 +194,12 @@ serve(async (req) => {
     const { documentId } = await req.json();
     if (!documentId) throw new Error("documentId is required");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? null;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const geminiApiKey = await getUserGeminiApiKey(authHeader, supabaseUrl, supabaseAnonKey, supabaseServiceKey);
 
     // Get document record
     const { data: doc, error: docError } = await supabase
@@ -142,7 +231,16 @@ serve(async (req) => {
         fullText = result.text;
       } else {
         console.log("Native PDF extraction yielded poor results, trying Vision API...");
-        fullText = await extractTextWithVisionAPI(bytes, LOVABLE_API_KEY);
+        try {
+          fullText = await extractTextWithVisionAPI(bytes, LOVABLE_API_KEY, geminiApiKey);
+        } catch (ocrError) {
+          if (result.text.trim().length > 200) {
+            console.warn("OCR fallback failed, continuing with native extraction:", ocrError);
+            fullText = result.text;
+          } else {
+            throw ocrError;
+          }
+        }
       }
     } else {
       fullText = await fileData.text();
@@ -185,25 +283,18 @@ serve(async (req) => {
     }
 
     // Generate summary
-    let summary = "";
+    let summary = generateFallbackSummary(fullText);
     try {
-      const summaryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: "Summarize this document in 2-3 sentences. Be concise and informative." },
-            { role: "user", content: fullText.slice(0, 4000) },
-          ],
-        }),
-      });
-      if (summaryResponse.ok) {
+      const { response: summaryResponse } = await fetchAiWithFallback({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: "Summarize this document in 2-3 sentences. Be concise and informative." },
+          { role: "user", content: fullText.slice(0, 4000) },
+        ],
+      }, LOVABLE_API_KEY, geminiApiKey);
+      if (summaryResponse) {
         const summaryData = await summaryResponse.json();
-        summary = summaryData.choices?.[0]?.message?.content || "";
+        summary = summaryData.choices?.[0]?.message?.content || summary;
       }
     } catch (e) {
       console.error("Summary generation failed:", e);

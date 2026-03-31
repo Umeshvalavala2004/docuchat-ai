@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.tool-chat]
 verify_jwt = false
+
+[functions.tool-process]
+verify_jwt = false
