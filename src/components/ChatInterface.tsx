@@ -235,6 +235,9 @@ export default function ChatInterface({
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [openSource, setOpenSource] = useState<Source | null>(null);
+  const [openSourceAnswer, setOpenSourceAnswer] = useState<string>("");
+  const [followUps, setFollowUps] = useState<Record<number, string[]>>({});
   const [showKeyPoints, setShowKeyPoints] = useState(false);
   const [docStatus, setDocStatus] = useState<string>("loading");
   const messagesEndRef = useRef<HTMLDivElement>(null);
