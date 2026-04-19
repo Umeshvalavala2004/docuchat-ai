@@ -84,6 +84,38 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [userSearch, setUserSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [adminDocs, setAdminDocs] = useState<AdminDocument[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "documents") return;
+    setDocsLoading(true);
+    supabase
+      .from("documents")
+      .select("id, name, file_size, file_type, status, chunk_count, created_at, user_id")
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        setAdminDocs((data as AdminDocument[]) || []);
+        setDocsLoading(false);
+      });
+  }, [tab]);
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const units = ["B", "KB", "MB", "GB"];
+    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${units[i]}`;
+  };
+
+  const statusMeta: Record<string, { label: string; cls: string }> = {
+    ready: { label: "Indexed successfully", cls: "bg-success/15 text-success" },
+    indexing: { label: "Indexing…", cls: "bg-primary/15 text-primary" },
+    processing: { label: "Processing…", cls: "bg-primary/15 text-primary" },
+    pending: { label: "Pending", cls: "bg-muted text-muted-foreground" },
+    error: { label: "Failed", cls: "bg-destructive/15 text-destructive" },
+  };
 
   const filteredUsers = users.filter((u) => {
     if (!userSearch.trim()) return true;
@@ -357,6 +389,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "users", label: "Users", icon: Users },
+    { id: "documents", label: "Documents", icon: FolderOpen },
     { id: "requests", label: "Requests", icon: Crown, badge: pendingCount },
     { id: "branding", label: "Branding", icon: Palette },
   ];
