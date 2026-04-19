@@ -71,45 +71,130 @@ function FeedbackButtons({ messageId, userId, initialFeedback }: { messageId?: s
   );
 }
 
-function ExpandableSource({ src, index, onNavigate, documentName }: { src: Source; index: number; onNavigate?: (page: number | null, text?: string) => void; documentName?: string }) {
-  const [expanded, setExpanded] = useState(false);
+function detectSection(text: string): string | null {
+  const lines = (text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines.slice(0, 3)) {
+    if (line.length > 2 && line.length < 80 && /^(\d+(\.\d+)*\s+)?[A-Z][A-Za-z0-9 ,&\-/()]+$/.test(line) && !line.endsWith(".")) {
+      return line.replace(/^\d+(\.\d+)*\s+/, "").trim();
+    }
+  }
+  return null;
+}
+
+function buildSourceLabel(src: Source, documentName?: string): string {
+  const section = detectSection(src.content);
+  const page = src.page_number ? `Page ${src.page_number}` : null;
+  const left = section || page || "Excerpt";
+  const middle = section && page ? ` — ${page}` : "";
+  const doc = documentName ? ` | ${documentName}` : "";
+  return `${left}${middle}${doc}`;
+}
+
+function SourceCitation({ src, documentName, onOpen }: { src: Source; documentName?: string; onOpen: (src: Source) => void }) {
   const scoreColor = src.score >= 0.8 ? "text-success" : src.score >= 0.6 ? "text-primary" : "text-warning";
+  const label = buildSourceLabel(src, documentName);
   return (
-    <div className="flex flex-col w-full rounded-xl bg-accent/50 border border-border/30 overflow-hidden text-left text-xs hover:bg-accent hover:border-primary/20 transition-all">
-      <button onClick={() => setExpanded(!expanded)} className="flex items-start gap-2.5 w-full text-left p-3">
-        <div className="mt-0.5 h-5 w-5 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FileText className="h-3 w-3 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          {documentName && (
-            <div className="mb-1.5">
-              <span className="text-[10px] font-semibold text-foreground block truncate">{documentName}</span>
-              <div className="h-[2px] w-full rounded-full bg-primary/20 mt-1" />
-            </div>
-          )}
-          <span className={`text-muted-foreground leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>{src.content}</span>
-        </div>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-      </button>
-      <div className="flex items-center gap-2.5 px-3 pb-2.5 ml-[30px]">
-        {(() => {
-          const lines = (src.content || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-          const heading = lines.slice(0, 3).find(
-            (l) => l.length > 2 && l.length < 80 && /^(\d+(\.\d+)*\s+)?[A-Z][A-Za-z0-9 ,&\-/()]+$/.test(l) && !l.endsWith(".")
-          );
-          const label = heading ? heading.replace(/^\d+(\.\d+)*\s+/, "") : src.page_number ? `Page ${src.page_number}` : "Excerpt";
-          return <span className="text-[10px] text-muted-foreground/60 font-medium truncate max-w-[160px]">{label}</span>;
-        })()}
-        {src.page_number && (
-          <button onClick={() => onNavigate?.(src.page_number, src.content?.slice(0, 80))} className="text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer font-medium">📄 Page {src.page_number}</button>
-        )}
-        {src.score > 0 && (
-          <span className={`text-[10px] font-medium ${scoreColor}`}>
-            {(src.score * 100).toFixed(0)}% relevance
-          </span>
-        )}
+    <button
+      onClick={() => onOpen(src)}
+      className="group flex items-center gap-2 w-full rounded-xl bg-accent/40 hover:bg-accent border border-border/40 hover:border-primary/40 p-2.5 text-left text-xs transition-all"
+      title="View full snippet"
+    >
+      <div className="h-6 w-6 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center shrink-0 transition-colors">
+        <FileText className="h-3 w-3 text-primary" />
       </div>
-    </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-foreground truncate">{label}</div>
+        <div className="text-muted-foreground/80 truncate text-[11px] mt-0.5">{src.content.slice(0, 90)}…</div>
+      </div>
+      {src.score > 0 && (
+        <span className={`text-[10px] font-medium tabular-nums ${scoreColor} shrink-0`}>
+          {Math.round(src.score * 100)}%
+        </span>
+      )}
+      <ExternalLink className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary shrink-0 transition-colors" />
+    </button>
+  );
+}
+
+function SourceModal({
+  src,
+  documentName,
+  onClose,
+  onJumpToPage,
+  answerText,
+}: {
+  src: Source | null;
+  documentName?: string;
+  onClose: () => void;
+  onJumpToPage?: (page: number | null, text?: string) => void;
+  answerText?: string;
+}) {
+  if (!src) return null;
+  const label = buildSourceLabel(src, documentName);
+
+  // Find the most-relevant sentence from the snippet to highlight (longest sentence overlap with answer)
+  const sentences = (src.content || "").split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 10);
+  let bestSentence = sentences[0] || src.content;
+  if (answerText && sentences.length > 1) {
+    const answerWords = new Set(
+      answerText.toLowerCase().replace(/[^\w\s]/g, " ").split(/\s+/).filter((w) => w.length > 4)
+    );
+    let bestScore = 0;
+    for (const s of sentences) {
+      const words = s.toLowerCase().replace(/[^\w\s]/g, " ").split(/\s+/);
+      const score = words.filter((w) => answerWords.has(w)).length;
+      if (score > bestScore) {
+        bestScore = score;
+        bestSentence = s;
+      }
+    }
+  }
+
+  return (
+    <Dialog open={!!src} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4 text-primary" />
+            {label}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Full context excerpt from the source document
+          </DialogDescription>
+        </DialogHeader>
+        <div className="rounded-xl border border-border bg-muted/30 p-4 max-h-[50vh] overflow-y-auto">
+          <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+            {(src.content || "").split(bestSentence).map((part, i, arr) => (
+              <span key={i}>
+                {part}
+                {i < arr.length - 1 && (
+                  <mark className="bg-primary/20 text-foreground px-1 rounded">{bestSentence}</mark>
+                )}
+              </span>
+            ))}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <span className="text-[11px] text-muted-foreground">
+            Highlighted sentence is the closest match to the AI answer
+          </span>
+          {src.page_number && onJumpToPage && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                onJumpToPage(src.page_number, bestSentence.slice(0, 80));
+                onClose();
+              }}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open page {src.page_number}
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
