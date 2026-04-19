@@ -660,7 +660,6 @@ export default function ChatInterface({
                       </div>
                     </motion.div>
                   )}
-                  </div>
                   <div className="flex items-center gap-1.5 mt-1.5 px-1">
                     <MessageTimestamp time={msg.timestamp} />
                     {msg.role === "assistant" && (
