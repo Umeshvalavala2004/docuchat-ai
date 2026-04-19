@@ -284,10 +284,26 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
       if (docs) for (const d of docs) docNames[d.id] = d.name;
     }
 
+    // Try to detect a section/heading from the chunk content (first short line in Title Case or ALL CAPS)
+    function detectSection(text: string): string | null {
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      for (const line of lines.slice(0, 3)) {
+        if (line.length > 2 && line.length < 80) {
+          // Heading-like: numbered (e.g. "1. Scope"), ALL CAPS, or Title Case ending without period
+          if (/^(\d+(\.\d+)*\s+)?[A-Z][A-Za-z0-9 ,&\-/()]+$/.test(line) && !line.endsWith(".")) {
+            return line.replace(/^\d+(\.\d+)*\s+/, "").trim();
+          }
+        }
+      }
+      return null;
+    }
+
     const context = topChunks.map((c: any, i: number) => {
       const docLabel = docNames[c.document_id] ? ` from "${docNames[c.document_id]}"` : "";
-      const score = (c.rerank_score ?? c.combined_score ?? 0.5).toFixed(2);
-      return `[Source ${i + 1}]${docLabel} (chunk ${c.chunk_index}, relevance: ${score})\n${c.content}`;
+      const section = detectSection(c.content);
+      const pageLabel = c.page_number ? `page ${c.page_number}` : `chunk ${c.chunk_index}`;
+      const sectionLabel = section ? `, section "${section}"` : "";
+      return `[Source ${i + 1}]${docLabel} (${pageLabel}${sectionLabel})\n${c.content}`;
     }).join("\n\n---\n\n");
 
     const sources = topChunks.map((c: any) => ({
