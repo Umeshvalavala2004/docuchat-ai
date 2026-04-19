@@ -91,7 +91,14 @@ function ExpandableSource({ src, index, onNavigate, documentName }: { src: Sourc
         <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
       </button>
       <div className="flex items-center gap-2.5 px-3 pb-2.5 ml-[30px]">
-        <span className="text-[10px] text-muted-foreground/60 font-medium">Chunk {src.chunk_index + 1}</span>
+        {(() => {
+          const lines = (src.content || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          const heading = lines.slice(0, 3).find(
+            (l) => l.length > 2 && l.length < 80 && /^(\d+(\.\d+)*\s+)?[A-Z][A-Za-z0-9 ,&\-/()]+$/.test(l) && !l.endsWith(".")
+          );
+          const label = heading ? heading.replace(/^\d+(\.\d+)*\s+/, "") : src.page_number ? `Page ${src.page_number}` : "Excerpt";
+          return <span className="text-[10px] text-muted-foreground/60 font-medium truncate max-w-[160px]">{label}</span>;
+        })()}
         {src.page_number && (
           <button onClick={() => onNavigate?.(src.page_number, src.content?.slice(0, 80))} className="text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer font-medium">📄 Page {src.page_number}</button>
         )}
