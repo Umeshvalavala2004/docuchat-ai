@@ -6,7 +6,7 @@ import {
   Users, FileText, MessageSquare, Crown, Ban,
   ArrowUpCircle, ArrowDownCircle, BarChart3, Eye, RotateCcw,
   TrendingUp, Activity, Search as SearchIcon, Tag,
-  Palette, Save, Image, Trash2,
+  Palette, Save, Image, Trash2, FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,18 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminTab = "overview" | "analytics" | "users" | "requests" | "branding";
+type AdminTab = "overview" | "analytics" | "users" | "documents" | "requests" | "branding";
+
+interface AdminDocument {
+  id: string;
+  name: string;
+  file_size: number;
+  file_type: string;
+  status: string;
+  chunk_count: number | null;
+  created_at: string;
+  user_id: string;
+}
 
 const CHART_COLORS = [
   "hsl(222, 80%, 55%)",
@@ -73,6 +84,38 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [userSearch, setUserSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [adminDocs, setAdminDocs] = useState<AdminDocument[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "documents") return;
+    setDocsLoading(true);
+    supabase
+      .from("documents")
+      .select("id, name, file_size, file_type, status, chunk_count, created_at, user_id")
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        setAdminDocs((data as AdminDocument[]) || []);
+        setDocsLoading(false);
+      });
+  }, [tab]);
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const units = ["B", "KB", "MB", "GB"];
+    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${units[i]}`;
+  };
+
+  const statusMeta: Record<string, { label: string; cls: string }> = {
+    ready: { label: "Indexed successfully", cls: "bg-success/15 text-success" },
+    indexing: { label: "Indexing…", cls: "bg-primary/15 text-primary" },
+    processing: { label: "Processing…", cls: "bg-primary/15 text-primary" },
+    pending: { label: "Pending", cls: "bg-muted text-muted-foreground" },
+    error: { label: "Failed", cls: "bg-destructive/15 text-destructive" },
+  };
 
   const filteredUsers = users.filter((u) => {
     if (!userSearch.trim()) return true;
@@ -346,6 +389,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "users", label: "Users", icon: Users },
+    { id: "documents", label: "Documents", icon: FolderOpen },
     { id: "requests", label: "Requests", icon: Crown, badge: pendingCount },
     { id: "branding", label: "Branding", icon: Palette },
   ];
@@ -790,6 +834,54 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ── DOCUMENTS ── */}
+            {tab === "documents" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">All Documents</h3>
+                    <p className="text-xs text-muted-foreground">Track file size, indexing status, and processing errors</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{adminDocs.length} total</span>
+                </div>
+                {docsLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : adminDocs.length === 0 ? (
+                  <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">No documents uploaded yet</div>
+                ) : (
+                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="grid grid-cols-[1fr_90px_140px_180px_120px] gap-3 px-4 py-2 border-b border-border bg-muted/40 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <div>Name</div><div>Size</div><div>Owner</div><div>Status</div><div>Uploaded</div>
+                    </div>
+                    <div className="max-h-[60vh] overflow-y-auto">
+                      {adminDocs.map((d) => {
+                        const meta = statusMeta[d.status] || statusMeta.pending;
+                        const owner = users.find((u) => u.id === d.user_id);
+                        return (
+                          <div key={d.id} className="grid grid-cols-[1fr_90px_140px_180px_120px] gap-3 px-4 py-2.5 border-b border-border/50 text-xs items-center hover:bg-accent/30">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate font-medium text-foreground" title={d.name}>{d.name}</span>
+                            </div>
+                            <div className="text-muted-foreground">{formatBytes(d.file_size)}</div>
+                            <div className="truncate text-muted-foreground" title={owner?.email || ""}>{owner?.email || owner?.name || d.user_id.slice(0, 8)}</div>
+                            <div>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${meta.cls}`}>
+                                {d.status === "indexing" || d.status === "processing" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : null}
+                                {meta.label}
+                                {d.status === "ready" && d.chunk_count ? ` · ${d.chunk_count} chunks` : ""}
+                              </span>
+                            </div>
+                            <div className="text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

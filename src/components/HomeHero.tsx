@@ -219,13 +219,17 @@ export default function HomeHero({ userId, onDocumentUploaded, onToolProcess, br
                 </motion.div>
               ) : (
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Upload your document and start asking questions
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Drop a file or{" "}
                     <span className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground shadow-elegant hover-lift">
                       upload <Upload className="h-3.5 w-3.5" />
                     </span>
                   </p>
-                  <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT • Max 100MB</p>
+                  <p className="text-xs text-muted-foreground">Supported: PDF, DOCX, TXT</p>
+                  <p className="text-[11px] text-muted-foreground/80">Max file size: 100MB (auto-processed in chunks)</p>
                 </motion.div>
               )}
             </AnimatePresence>
