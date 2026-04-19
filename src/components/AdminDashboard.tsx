@@ -6,7 +6,7 @@ import {
   Users, FileText, MessageSquare, Crown, Ban,
   ArrowUpCircle, ArrowDownCircle, BarChart3, Eye, RotateCcw,
   TrendingUp, Activity, Search as SearchIcon, Tag,
-  Palette, Save, Image, Trash2,
+  Palette, Save, Image, Trash2, FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,18 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminTab = "overview" | "analytics" | "users" | "requests" | "branding";
+type AdminTab = "overview" | "analytics" | "users" | "documents" | "requests" | "branding";
+
+interface AdminDocument {
+  id: string;
+  name: string;
+  file_size: number;
+  file_type: string;
+  status: string;
+  chunk_count: number | null;
+  created_at: string;
+  user_id: string;
+}
 
 const CHART_COLORS = [
   "hsl(222, 80%, 55%)",
