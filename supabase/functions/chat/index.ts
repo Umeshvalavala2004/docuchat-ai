@@ -284,10 +284,26 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
       if (docs) for (const d of docs) docNames[d.id] = d.name;
     }
 
+    // Try to detect a section/heading from the chunk content (first short line in Title Case or ALL CAPS)
+    function detectSection(text: string): string | null {
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      for (const line of lines.slice(0, 3)) {
+        if (line.length > 2 && line.length < 80) {
+          // Heading-like: numbered (e.g. "1. Scope"), ALL CAPS, or Title Case ending without period
+          if (/^(\d+(\.\d+)*\s+)?[A-Z][A-Za-z0-9 ,&\-/()]+$/.test(line) && !line.endsWith(".")) {
+            return line.replace(/^\d+(\.\d+)*\s+/, "").trim();
+          }
+        }
+      }
+      return null;
+    }
+
     const context = topChunks.map((c: any, i: number) => {
       const docLabel = docNames[c.document_id] ? ` from "${docNames[c.document_id]}"` : "";
-      const score = (c.rerank_score ?? c.combined_score ?? 0.5).toFixed(2);
-      return `[Source ${i + 1}]${docLabel} (chunk ${c.chunk_index}, relevance: ${score})\n${c.content}`;
+      const section = detectSection(c.content);
+      const pageLabel = c.page_number ? `page ${c.page_number}` : `chunk ${c.chunk_index}`;
+      const sectionLabel = section ? `, section "${section}"` : "";
+      return `[Source ${i + 1}]${docLabel} (${pageLabel}${sectionLabel})\n${c.content}`;
     }).join("\n\n---\n\n");
 
     const sources = topChunks.map((c: any) => ({
@@ -310,18 +326,50 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
       Academic: "Use formal academic language. Include precise terminology, structured arguments, and scholarly tone. Cite sources methodically.",
     };
     const styleNote = styleInstructions[responseStyle || "Detailed"] || styleInstructions.Detailed;
-    const systemPrompt = `You are a document Q&A assistant. Answer questions STRICTLY based on the provided document context.
+    const systemPrompt = `You are a strict document Q&A assistant. You must answer ONLY using the provided document context below. Do NOT use external knowledge, training data, assumptions, or guesses.
+
 ${multiDocNote}
 RESPONSE STYLE: ${styleNote}
 
-CRITICAL RULES:
-1. ONLY use information from the provided context below. Do NOT use any prior knowledge.
-2. If the answer is NOT found in the context, respond: "I couldn't find this information in the provided document sections. Try rephrasing your question or asking about a different topic covered in the document."
-3. Always cite which source numbers you used (e.g., [Source 1], [Source 3]).
-4. Be precise, helpful, and well-structured. Use markdown formatting.
-5. If only partial information is available, state what you found and note what's missing.
+═══════════════════════════════════════
+ABSOLUTE RULES (NEVER VIOLATE):
+═══════════════════════════════════════
+1. ONLY use information explicitly stated in the DOCUMENT CONTEXT below. If something is not in the context, you do not know it.
+2. If the answer is NOT clearly present in the context, respond EXACTLY with:
+   "This information is not available in the provided document."
+   Do not add any other text, speculation, or general knowledge.
+3. NEVER hallucinate, infer beyond the text, or fill gaps with assumptions.
+4. Preserve technical terms, formulas, codes, and abbreviations EXACTLY as written in the document (e.g., L[dark,w], CR, CLSC).
+5. If multiple sources conflict, respond:
+   "The document provides multiple interpretations; please clarify which section you are referring to."
+6. Prefer refusal over guessing. When in doubt, say the information is not available.
 
+═══════════════════════════════════════
+REQUIRED RESPONSE FORMAT (use this exact markdown structure):
+═══════════════════════════════════════
+
+**Answer:**
+<A clear, concise, direct answer using only the document. Bold key terms. Format formulas properly. No filler, no over-explanation.>
+
+**Source:**
+- "<exact supporting sentence or short snippet copied verbatim from the document>" — *<section name or page if available>*
+- (add another bullet only if a second source is genuinely needed)
+
+**Confidence:** High | Medium | Low
+- High = answer is stated directly and unambiguously in the document
+- Medium = answer is partially stated or requires light combination of two passages from the document
+- Low = the document only weakly or indirectly supports the answer
+
+═══════════════════════════════════════
+CITATION STYLE:
+═══════════════════════════════════════
+- In the Answer body, cite naturally in prose, e.g. "According to Section 1 (Scope)..." or "As stated on page 4...".
+- Do NOT use generic labels like "Source 1", "Chunk 2", or internal IDs in the Answer body.
+- Keep the tone professional, precise, and concise. No apologies, no meta-commentary.
+
+═══════════════════════════════════════
 DOCUMENT CONTEXT:
+═══════════════════════════════════════
 ${context}`;
 
     const messages: any[] = [{ role: "system", content: systemPrompt }];
