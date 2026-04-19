@@ -399,7 +399,15 @@ export default function ChatInterface({
           setResponseTime(Math.round(performance.now() - startTime));
           let assistantMsgId: string | null = null;
           if (currentSessionId) assistantMsgId = await saveMessage(currentSessionId, "assistant", assistantContent, sources);
-          setMessages((prev) => prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m));
+          setMessages((prev) => {
+            const next = prev.map((m, i) => i === prev.length - 1 && m.role === "assistant" ? { ...m, sources, id: assistantMsgId || undefined } : m);
+            // Generate follow-ups for the latest assistant message from the suggested-questions pool
+            const lastIdx = next.length - 1;
+            const pool = suggestedQuestions.filter((q) => q && q.toLowerCase() !== userMessage.toLowerCase());
+            const picked = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+            if (picked.length > 0) setFollowUps((fu) => ({ ...fu, [lastIdx]: picked }));
+            return next;
+          });
         },
         onError: (error) => {
           setIsLoading(false);
@@ -613,10 +621,45 @@ export default function ChatInterface({
                       <div className="mt-3 border-t border-border/30 pt-3">
                         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sources ({msg.sources.length})</p>
                         <div className="grid gap-1.5">
-                          {msg.sources.slice(0, 4).map((src, j) => <ExpandableSource key={j} src={src} index={j} onNavigate={onCitationClick} documentName={documentName} />)}
+                          {msg.sources.slice(0, 4).map((src, j) => (
+                            <SourceCitation
+                              key={j}
+                              src={src}
+                              documentName={documentName}
+                              onOpen={(s) => { setOpenSource(s); setOpenSourceAnswer(msg.content); }}
+                            />
+                          ))}
                         </div>
                       </div>
                     )}
+                    {msg.role === "assistant" && msg.content && !isLoading && (
+                      <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/80 border-t border-border/30 pt-2">
+                        <ShieldCheck className="h-3 w-3 text-success" />
+                        <span>Answer based strictly on your uploaded document</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Smart follow-up suggestions */}
+                  {msg.role === "assistant" && followUps[i] && followUps[i].length > 0 && !isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 space-y-1.5"
+                    >
+                      <p className="text-[10px] font-medium text-muted-foreground px-1">You can also ask:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {followUps[i].map((q, k) => (
+                          <button
+                            key={k}
+                            onClick={() => sendMessage(q)}
+                            className="rounded-full border border-border bg-card hover:bg-accent hover:border-primary/40 px-3 py-1 text-[11px] text-foreground transition-all hover-lift"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 px-1">
                     <MessageTimestamp time={msg.timestamp} />
