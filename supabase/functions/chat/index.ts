@@ -271,8 +271,15 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
       }
     }
 
-    // --- Step 3: Select top 5 ---
-    const topChunks = rerankedChunks.slice(0, 5);
+    // --- Step 3: Select top 3 (deduplicated by content) ---
+    const seen = new Set<string>();
+    const deduped = rerankedChunks.filter((c: any) => {
+      const key = (c.content || "").slice(0, 120).trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const topChunks = deduped.slice(0, 3);
     const scores = topChunks.map((c) => c.rerank_score ?? c.combined_score ?? c.similarity ?? 0.5);
     const topScore = Math.max(...scores);
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -298,12 +305,13 @@ Return ONLY a JSON array of objects with "index" and "score" fields, sorted by s
       return null;
     }
 
-    const context = topChunks.map((c: any, i: number) => {
+    const context = topChunks.map((c: any) => {
       const docLabel = docNames[c.document_id] ? ` from "${docNames[c.document_id]}"` : "";
       const section = detectSection(c.content);
-      const pageLabel = c.page_number ? `page ${c.page_number}` : `chunk ${c.chunk_index}`;
-      const sectionLabel = section ? `, section "${section}"` : "";
-      return `[Source ${i + 1}]${docLabel} (${pageLabel}${sectionLabel})\n${c.content}`;
+      const pageLabel = c.page_number ? `Page ${c.page_number}` : null;
+      const refParts = [section, pageLabel].filter(Boolean).join(" — ");
+      const ref = refParts ? `${refParts}${docLabel}` : `Excerpt${docLabel}`;
+      return `[${ref}]\n${c.content}`;
     }).join("\n\n---\n\n");
 
     const sources = topChunks.map((c: any) => ({
