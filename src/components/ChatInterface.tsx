@@ -842,6 +842,15 @@ export default function ChatInterface({
           <p className="mt-1.5 sm:mt-2 text-center text-[10px] text-muted-foreground/50 hidden sm:block">Type # to mention a document for targeted answers</p>
         </div>
       </div>
+
+      {/* Source citation modal */}
+      <SourceModal
+        src={openSource}
+        documentName={documentName}
+        onClose={() => setOpenSource(null)}
+        onJumpToPage={onCitationClick}
+        answerText={openSourceAnswer}
+      />
     </div>
   );
 }
